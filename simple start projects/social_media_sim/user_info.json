@@ -1,0 +1,23 @@
+{
+    "bob": {
+        "passcode": "1111",
+        "email": "bob@gmail.com",
+        "user_post_qty": 0,
+        "is_admin": false,
+        "is_banned": false,
+        "posts": {}
+    },
+    "admin": {
+        "passcode": "qwerty",
+        "email": "admin@gmail.com",
+        "is_admin": true
+    },
+    "mike": {
+        "passcode": "2222",
+        "email": "mike@gmail.com",
+        "user_post_qty": 2,
+        "is_admin": false,
+        "is_banned": false,
+        "posts": {}
+    }
+}
