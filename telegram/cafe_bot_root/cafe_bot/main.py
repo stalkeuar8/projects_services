@@ -1,12 +1,14 @@
-from aiogram import Bot, Dispatcher, Router
+import os
+
+from aiogram import Bot, Dispatcher
 import asyncio
 from cafe_bot.handlers.__init__ import route_generator
-from cafe_bot.secret_info import TOKEN
 from cafe_bot.logs.logging import logger
+from cafe_bot.config import BOT_TOKEN
 
 async def main():
     try:
-        bot = Bot(token=TOKEN)
+        bot = Bot(token=BOT_TOKEN)
         dp = Dispatcher()
         route_generator(dp)
         logger.bind(type='system').info("Bot started!")
