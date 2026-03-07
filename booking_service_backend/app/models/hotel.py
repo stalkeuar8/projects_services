@@ -13,6 +13,7 @@ class Hotels(Base):
     city: Mapped[non_empty_str]
     rating: Mapped[not_null_int]
 
+    rooms: Mapped[list['Rooms']] = relationship(back_populates='hotel')
 
 class Rooms(Base):
     __tablename__ = 'rooms'
@@ -22,3 +23,5 @@ class Rooms(Base):
     category: Mapped[non_empty_str]
     capacity: Mapped[not_null_int]
     price_per_night: Mapped[not_null_int]
+
+    hotel: Mapped['Hotels'] = relationship(back_populates='rooms')

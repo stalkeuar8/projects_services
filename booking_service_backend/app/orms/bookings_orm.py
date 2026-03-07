@@ -1,20 +1,12 @@
 from app.utils.booking_validators import BookingsSchema
 from app.models.booking import Bookings, Clients
-from app.settings.database import async_session_factory, async_engine
+from app.orms.base_orm import BaseOrm
+from app.settings.database import async_session_factory
 from sqlalchemy import select
 import asyncio
-from faker import Faker
-import random
-
-fake = Faker('en_US')
-
-BANNED_COUNTRIES = [
-    'Russia', 'Russian Federation', 
-    'Belarus', 'Republic of Belarus'
-]
 
 
-class BookingsOrm:
+class BookingsOrm(BaseOrm):
 
     @staticmethod
     async def new_client(incoming_data: dict):
@@ -36,5 +28,15 @@ class BookingsOrm:
 
 
     @staticmethod
-    async def new_booking():
-        pass
+    async def new_booking(incoming_data: dict):
+        async with async_session_factory() as session:
+            validated_data = BookingsSchema.model_validate(incoming_data)
+
+            booking = Bookings(**validated_data.model_dump())
+            
+            session.add(booking)
+            await session.commit()
+
+
+
+    

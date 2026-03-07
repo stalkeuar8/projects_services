@@ -12,6 +12,8 @@ class Clients(Base):
     full_name: Mapped[non_empty_str]
     phone_number: Mapped[non_empty_str] = mapped_column(unique=True)
 
+    bookings: Mapped[list['Bookings']] = relationship(back_populates='client')
+
 
 class Bookings(Base):
     __tablename__ = 'bookings'
@@ -23,3 +25,6 @@ class Bookings(Base):
     check_out: Mapped[datetime.datetime]
     total_price: Mapped[not_null_int]
     status: Mapped[non_empty_str] = mapped_column(default='booked')
+
+    client: Mapped['Clients'] = relationship(back_populates='bookings')
+    hotel: Mapped['Hotels'] = relationship()
