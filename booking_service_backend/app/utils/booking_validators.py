@@ -4,7 +4,7 @@ import datetime
 
 class BookingStatus(str, Enum):
     booked = 'booked'
-    checked_in = 'checked_in'
+    pending = 'pending'
     completed = 'completed'
     canceled = 'canceled'
 

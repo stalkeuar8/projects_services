@@ -1,8 +1,6 @@
-from sqlalchemy import ForeignKey, text
+from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from typing import Annotated
 from app.models.base import Base, id_primary_key, non_empty_str, not_null_int
-import datetime
 
 class Hotels(Base):
     __tablename__ = 'hotels'
