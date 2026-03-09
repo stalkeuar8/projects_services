@@ -19,7 +19,7 @@ class Bookings(Base):
     __tablename__ = 'bookings'
 
     id: Mapped[id_primary_key]
-    apart_id: Mapped[not_null_int] = mapped_column(ForeignKey('apartments.id'))
+    room_id: Mapped[not_null_int] = mapped_column(ForeignKey('rooms.id'))
     client_id: Mapped[not_null_int] = mapped_column(ForeignKey('clients.id'))
     check_in: Mapped[datetime.datetime] = mapped_column(server_default=text("TIMEZONE('utc', now())"), nullable=False)
     check_out: Mapped[datetime.datetime]

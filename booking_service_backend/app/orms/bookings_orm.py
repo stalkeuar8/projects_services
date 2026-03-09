@@ -6,25 +6,7 @@ from sqlalchemy import select
 import asyncio
 
 
-class BookingsOrm(BaseOrm):
-
-    @staticmethod
-    async def new_client(incoming_data: dict):
-        async with async_session_factory() as session:
-            new_client = Clients(**incoming_data)
-            session.add(new_client)
-            await session.commit()
-
-
-    @staticmethod
-    async def new_clients(incoming_data_list: list[dict]):
-        async with async_session_factory() as session:
-            clients = [
-                Clients(**client) for client in incoming_data_list
-            ]
-
-            session.add_all(clients)
-            await session.commit()
+class BookingsOrm:
 
 
     @staticmethod
@@ -39,4 +21,58 @@ class BookingsOrm(BaseOrm):
 
 
 
-    
+    @staticmethod
+    async def find_by_id(id_to_find: int):
+        async with async_session_factory() as session:
+            query = (
+                select(Bookings)
+                .filter_by(id=id_to_find)
+            )
+            booking = await session.execute(query).scalar()
+            return booking
+
+
+
+    @staticmethod
+    async def multi_find_by_ids(ids_to_find_list: list[int]):
+        async with async_session_factory() as session:
+            query = (
+                select(Bookings)
+                .where(Bookings.id.in_(ids_to_find_list))
+                .order_by(Bookings.id)
+            )
+            bookings = await session.execute(query).scalars().all()
+            return bookings
+
+
+    @staticmethod
+    async def find_by_client_id(client_id: int):
+        async with async_session_factory() as session:
+            query = (
+                select(Bookings)
+                .filter_by(client_id=client_id)
+            )
+            booking = await session.execute(query).scalar()
+            return booking
+
+
+    @staticmethod 
+    async def find_by_room_id(room_id: int):
+        async with async_session_factory() as session:
+            query = (
+                select(Bookings)
+                .filter_by(room_id=room_id)
+            )
+            booking = await session.execute(query).scalar()
+            return booking
+
+
+    @staticmethod
+    async def find_by_hotel_id(hotel_id: int):
+        async with async_session_factory() as session:
+            query = (
+                select(Bookings)
+                .filter_by(hotel_id=hotel_id)
+            )
+            booking = await session.execute(query).scalar()
+            return booking
