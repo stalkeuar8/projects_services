@@ -13,11 +13,12 @@ class Hotels(Base):
 
     rooms: Mapped[list['Rooms']] = relationship(back_populates='hotel')
 
+
 class Rooms(Base):
     __tablename__ = 'rooms'
 
     id: Mapped[id_primary_key]
-    hotel_id: Mapped[not_null_int] = mapped_column(ForeignKey('hotels.id'))
+    hotel_id: Mapped[not_null_int] = mapped_column(ForeignKey('hotels.id', ondelete='CASCADE'))
     category: Mapped[non_empty_str]
     capacity: Mapped[not_null_int]
     price_per_night: Mapped[not_null_int]
