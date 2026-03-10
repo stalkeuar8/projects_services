@@ -1,7 +1,7 @@
-from sqlalchemy import MetaData, ForeignKey, text, CheckConstraint
+from sqlalchemy import ForeignKey, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from typing import Annotated
 from app.models.base import Base, id_primary_key, non_empty_str, not_null_int
+from app.models.hotel import Rooms
 import datetime
 
 
@@ -24,7 +24,7 @@ class Bookings(Base):
     check_in: Mapped[datetime.datetime] = mapped_column(server_default=text("TIMEZONE('utc', now())"), nullable=False)
     check_out: Mapped[datetime.datetime]
     total_price: Mapped[not_null_int]
-    status: Mapped[non_empty_str] = mapped_column(default='booked')
+    status: Mapped[non_empty_str] = mapped_column(default='pending')
 
     client: Mapped['Clients'] = relationship(back_populates='bookings')
-    hotel: Mapped['Hotels'] = relationship()
+    room: Mapped['Rooms'] = relationship()

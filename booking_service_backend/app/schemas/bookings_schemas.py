@@ -1,6 +1,14 @@
-from pydantic import BaseModel, Field, TypeAdapter
+from app.utils.time_validator import FutureTimeValidator
+from pydantic import BaseModel, Field
 from enum import Enum
 import datetime
+
+class BookingCreateDTO(BaseModel):
+
+    room_id: int
+    check_in: datetime.datetime = FutureTimeValidator()
+    check_out: datetime.datetime = FutureTimeValidator()
+
 
 class BookingStatus(str, Enum):
     booked = 'booked'

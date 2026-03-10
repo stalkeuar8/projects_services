@@ -1,25 +1,22 @@
 from app.models.booking import Clients
 from app.orms.base_orm import BaseOrm
-from app.settings.database import async_session_factory
 from app.utils.transaction_deco import transaction
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession 
-import asyncio
-
 
 
 class ClientsOrm(BaseOrm):
 
     @transaction
     @staticmethod
-    async def create(session: AsyncSession, incoming_data: dict):
+    async def create(incoming_data: dict, session: AsyncSession = None):
         new_client = Clients(**incoming_data)
         session.add(new_client)
 
 
     @transaction
     @staticmethod
-    async def multi_create(session: AsyncSession, incoming_data_list: list[dict]):
+    async def multi_create(incoming_data_list: list[dict], session: AsyncSession = None):
         clients = [
             Clients(**client) for client in incoming_data_list
         ]
@@ -29,54 +26,58 @@ class ClientsOrm(BaseOrm):
 
     @transaction
     @staticmethod
-    async def find_by_id(session: AsyncSession, id_to_find: int):
+    async def find_by_id(id_to_find: int, session: AsyncSession = None) -> Clients:
         query = (
             select(Clients)
-            .filter_by(id=id_to_find)
+            .where(Clients.id==id_to_find)
         )
-        client = await session.execute(query).scalar_one_or_none()
+        result = await session.execute(query)
+        client = result.scalar_one_or_none()
         return client
 
 
     @transaction
     @staticmethod
-    async def multi_find_by_ids(session: AsyncSession, id_to_find_list: list[int]):
+    async def multi_find_by_ids(id_to_find_list: list[int], session: AsyncSession = None):
         query = (
             select(Clients)
             .where(Clients.id.in_(id_to_find_list))
         )
-        clients = await session.execute(query).scalars().all()
+        results = await session.execute(query)
+        clients = results.scalars().all()
         return clients
 
 
     @transaction
     @staticmethod
-    async def find_by_name(session: AsyncSession, name_element: str):
+    async def find_by_name(name_element: str, session: AsyncSession = None):
         query = (
             select(Clients)
-            .where(Clients.full_name.like(name_element))
+            .where(Clients.full_name.contains(name_element))
         )
-        client = await session.execute(query).scalar_one_or_none()
-        return client
+        results = await session.execute(query)
+        clients = results.scalars().all()
+        return clients
 
 
     @transaction
     @staticmethod
-    async def find_by_phone_number(session: AsyncSession, phone_number: str):
+    async def find_by_phone_number(phone_number: str, session: AsyncSession = None):
         query = (
             select(Clients)
             .filter_by(phone_number=phone_number)
         )
-        client = await session.execute(query).scalar_one_or_none()
+        res = await session.execute(query)
+        client = res.scalar_one_or_none()
         return client
 
 
     @transaction
     @staticmethod
-    async def delete_by_id(session: AsyncSession, id_to_delete: int):
+    async def delete_by_id(id_to_delete: int, session: AsyncSession = None):
         query = (
             delete(Clients)
-            .where(Clients.id == id_to_delete)\
+            .where(Clients.id == id_to_delete)
             .returning(Clients)
         )
         client = await session.execute(query)
@@ -86,3 +87,5 @@ class ClientsOrm(BaseOrm):
             raise ValueError("Client was not found")
             
         return client_to_delete
+
+    

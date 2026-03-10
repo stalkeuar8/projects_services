@@ -1,7 +1,5 @@
-from app.utils.booking_validators import BookingsSchema
+from app.schemas.bookings_schemas import BookingsSchema
 from app.models.booking import Bookings, Clients
-from app.orms.base_orm import BaseOrm
-from app.settings.database import async_session_factory
 from app.utils.transaction_deco import transaction
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,7 +10,7 @@ class BookingsOrm:
 
     @transaction
     @staticmethod
-    async def new_booking(session: AsyncSession, incoming_data: dict):
+    async def new_booking(incoming_data: dict, session: AsyncSession | None = None):
         validated_data = BookingsSchema.model_validate(incoming_data)
 
         booking = Bookings(**validated_data.model_dump())
@@ -24,56 +22,76 @@ class BookingsOrm:
 
     @transaction
     @staticmethod
-    async def find_by_id(session: AsyncSession, id_to_find: int):
+    async def find_by_id(id_to_find: int, session: AsyncSession | None = None):
         query = (
             select(Bookings)
             .filter_by(id=id_to_find)
         )
-        booking = await session.execute(query).scalar()
+        result = await session.execute(query)
+        booking = result.scalar()
         return booking
 
 
 
     @transaction
     @staticmethod
-    async def multi_find_by_ids(session: AsyncSession, ids_to_find_list: list[int]):
+    async def multi_find_by_ids(ids_to_find_list: list[int], session: AsyncSession | None = None):
         query = (
             select(Bookings)
             .where(Bookings.id.in_(ids_to_find_list))
             .order_by(Bookings.id)
         )
-        bookings = await session.execute(query).scalars().all()
+        results = await session.execute(query)
+        bookings = results.scalars().all()
         return bookings
 
 
     @transaction
     @staticmethod
-    async def find_by_client_id(session: AsyncSession, client_id: int):
+    async def find_by_client_id(client_id: int, session: AsyncSession | None = None):
         query = (
             select(Bookings)
             .filter_by(client_id=client_id)
         )
-        booking = await session.execute(query).scalar()
+        result = await session.execute(query)
+        booking = result.scalar()
         return booking
 
 
     @transaction
     @staticmethod 
-    async def find_by_room_id(session: AsyncSession, room_id: int):
+    async def find_by_room_id(room_id: int, session: AsyncSession | None = None):
         query = (
             select(Bookings)
             .filter_by(room_id=room_id)
         )
-        booking = await session.execute(query).scalar()
+        result = await session.execute(query)
+        booking = result.scalar()
         return booking
 
 
     @transaction
     @staticmethod
-    async def find_by_hotel_id(session: AsyncSession, hotel_id: int):
+    async def find_by_hotel_id(hotel_id: int, session: AsyncSession | None = None):
         query = (
             select(Bookings)
             .filter_by(hotel_id=hotel_id)
         )
-        booking = await session.execute(query).scalar()
+        result = await session.execute(query)
+        booking = result.scalar()
         return booking
+    
+
+    @transaction
+    @staticmethod
+    async def check_room_status(room_id: int, session: AsyncSession | None = None):
+        query = (
+            select(Bookings)
+            .filter_by(room_id=room_id)
+            .order_by(Bookings.id.desc())
+            .limit(1)
+        )
+        result = await session.execute(query)
+        room_info = result.scalar_one_or_none()
+
+        return room_info

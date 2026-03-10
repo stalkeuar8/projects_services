@@ -1,5 +1,5 @@
 from app.models.hotel import Hotels
-from app.utils.hotel_validators import HotelsSchema, hotels_adapter
+from app.schemas.hotels_schemas import HotelsSchema, hotels_adapter
 from app.orms.base_orm import BaseOrm
 from app.utils.transaction_deco import transaction
 from sqlalchemy import select, delete
@@ -10,7 +10,7 @@ class HotelsOrm(BaseOrm):
 
     @transaction
     @staticmethod
-    async def create(session: AsyncSession, incoming_data: dict):
+    async def create(incoming_data: dict, session: AsyncSession | None = None):
         validated_data = HotelsSchema.model_validate(incoming_data)
         hotel = Hotels(**validated_data.model_dump())
 
@@ -19,7 +19,7 @@ class HotelsOrm(BaseOrm):
 
     @transaction
     @staticmethod
-    async def multi_create(session: AsyncSession, incoming_data_list: list[dict]):
+    async def multi_create(incoming_data_list: list[dict], session: AsyncSession | None = None):
         validated_data_list = hotels_adapter.validate_python(incoming_data_list)
 
         hotels = [
@@ -31,25 +31,26 @@ class HotelsOrm(BaseOrm):
 
     @transaction
     @staticmethod
-    async def find_by_id(session: AsyncSession, id_to_find: int):
+    async def find_by_id(id_to_find: int, session: AsyncSession | None = None):
         query = (
             select(Hotels)
             .filter_by(id=id_to_find)
         )
-        hotel = await session.execute(query).scalar_one_or_none()
+        result = await session.execute(query)
+        hotel = result.scalar_one_or_none()
         return hotel
     
 
     @transaction
     @staticmethod
-    async def delete_by_id(session: AsyncSession, id_to_delete: int):
+    async def delete_by_id(id_to_delete: int, session: AsyncSession | None = None):
         query = (
             delete(Hotels)
-            .where(Hotels.id == id_to_delete)\
+            .where(Hotels.id == id_to_delete)
             .returning(Hotels)
         )
-        hotel = await session.execute(query)
-        hotel_to_delete = hotel.scalar_one_or_none()
+        result = await session.execute(query)
+        hotel_to_delete = result.scalar_one_or_none()
 
         if not hotel_to_delete:
             raise ValueError("Room was not found")
@@ -57,4 +58,4 @@ class HotelsOrm(BaseOrm):
         return hotel_to_delete
 
 
-    
+
