@@ -43,6 +43,18 @@ class RoomsOrm(BaseOrm):
 
     @transaction
     @staticmethod
+    async def get_price_per_night(id_to_find: int, session: AsyncSession | None = None):
+        query = (
+            select(Rooms)
+            .filter_by(id=id_to_find)
+        )
+        result = await session.execute(query)
+        price = result.scalar().price_per_night
+        return price
+
+
+    @transaction
+    @staticmethod
     async def find_room_by_filters(filters: RoomSearchFilters, session: AsyncSession = None):
         validated_filters = filters.model_validate(filters)
 
