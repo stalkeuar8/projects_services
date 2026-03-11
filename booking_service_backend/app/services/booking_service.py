@@ -7,7 +7,7 @@ from app.orms.rooms_orm import RoomsOrm
 from app.orms.clients_orm import ClientsOrm
 from app.utils.transaction_deco import transaction
 from app.services.base_service import BaseService
-from app.schemas.bookings_schemas import BookingsSchema, BookingsCreateDTO
+from app.schemas.bookings_schemas import BookingsSchema
 from sqlalchemy.ext.asyncio import AsyncSession
 import datetime
 
@@ -24,25 +24,34 @@ class BookingService(BaseService):
         return rooms
     
 
-    @transaction 
+    @transaction
     async def check_available(self, room_id: int, check_in: datetime.datetime, check_out: datetime.datetime, session: AsyncSession = None):
     
-        room_info: Bookings = BookingsOrm.check_room_status(room_id=room_id, session=session)
-
-        if room_info:
-
-            if room_info.check_out and check_in > room_info.check_out:
-                return True
-
+        room_status: Bookings = await BookingsOrm.check_is_available(room_id=room_id, check_in=check_in, check_out=check_out, session=session)
+    
+        return room_status
+            
 
     @transaction
-    async def create_booking(self, dto: BookingsCreateDTO, session: AsyncSession = None):
-        room_id = dto.room_id
-        client_id = dto.client_id
-        check_in = dto.check_in
-        check_out = dto.check_out
-        price_per_night = RoomsOrm.get_price_per_night(id_to_find=room_id, session=session)
+    async def prepare_dto(self, room_id: int, client_id: int, check_in: datetime.datetime, check_out: datetime.datetime, session: AsyncSession | None = None):
+        
+        price_per_night = await RoomsOrm.get_price_per_night(id_to_find=room_id, session=session)
         total_days = (check_out - check_in).days
-        total_price = total_days * price_per_night
+        
+        dto = BookingsSchema(
+            room_id=room_id,
+            client_id=client_id,
+            check_in=check_in,
+            check_out=check_out,
+            total_price=total_days * price_per_night,
+            status='pending'
+        )
 
-        new_booking = BookingsOrm.new_booking()
+        return dto 
+    
+
+    @transaction
+    async def new_booking(self, dto: BookingsSchema, session: AsyncSession | None = None):
+         new_booking_id = await BookingsOrm.new_booking(incoming_data_dto=dto, session=session)
+         
+         return new_booking_id

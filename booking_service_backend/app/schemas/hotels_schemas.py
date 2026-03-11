@@ -1,6 +1,5 @@
-from pydantic import BaseModel, Field, TypeAdapter
-from enum import Enum
-from typing import List, Annotated
+from pydantic import BaseModel, Field
+from typing import Annotated
 
 
 RatingValid = Annotated[int, Field(ge=1, le=5)]
@@ -11,5 +10,3 @@ class HotelsSchema(BaseModel):
     city: str
     rating: RatingValid 
 
-
-hotels_adapter = TypeAdapter(List[HotelsSchema])

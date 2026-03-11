@@ -1,5 +1,5 @@
 from app.models.hotel import Hotels
-from app.schemas.hotels_schemas import HotelsSchema, hotels_adapter
+from app.schemas.hotels_schemas import HotelsSchema
 from app.orms.base_orm import BaseOrm
 from app.utils.transaction_deco import transaction
 from sqlalchemy import select, delete
@@ -10,20 +10,17 @@ class HotelsOrm(BaseOrm):
 
     @transaction
     @staticmethod
-    async def create(incoming_data: dict, session: AsyncSession | None = None):
-        validated_data = HotelsSchema.model_validate(incoming_data)
-        hotel = Hotels(**validated_data.model_dump())
+    async def create(incoming_data_dto: HotelsSchema, session: AsyncSession | None = None):
+        hotel = Hotels(**incoming_data_dto.model_dump())
 
         session.add(hotel)
 
 
     @transaction
     @staticmethod
-    async def multi_create(incoming_data_list: list[dict], session: AsyncSession | None = None):
-        validated_data_list = hotels_adapter.validate_python(incoming_data_list)
-
+    async def multi_create(incoming_data_list_dto: list[HotelsSchema], session: AsyncSession | None = None):
         hotels = [
-            Hotels(**hotel.model_dump()) for hotel in validated_data_list
+            Hotels(**hotel.model_dump()) for hotel in incoming_data_list_dto
         ]
 
         session.add_all(hotels)

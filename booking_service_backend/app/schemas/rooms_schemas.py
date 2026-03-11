@@ -1,6 +1,6 @@
-from pydantic import BaseModel, Field, TypeAdapter
+from pydantic import BaseModel, Field
 from enum import Enum
-from typing import List, Annotated
+from typing import Annotated
 
 CapacityValid = Annotated[int, Field(ge=1, le=3)]
 PriceValid = Annotated[int, Field(ge=0)]
@@ -19,5 +19,3 @@ class RoomsSchema(BaseModel):
     capacity: CapacityValid
     price_per_night: PriceValid
 
-
-rooms_adapter = TypeAdapter(List[RoomsSchema])

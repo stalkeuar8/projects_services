@@ -12,19 +12,18 @@ class RoomsOrm(BaseOrm):
 
     @transaction
     @staticmethod
-    async def create(incoming_data: dict, session: AsyncSession | None = None):
-        validated_data = RoomsSchema.model_validate(incoming_data)
-        room = Rooms(**validated_data.model_dump())
+    async def create(incoming_data_dto: RoomsSchema, session: AsyncSession | None = None):
+
+        room = Rooms(**incoming_data_dto.model_dump())
 
         session.add(room)
 
 
     @transaction
     @staticmethod
-    async def multi_create(incoming_data_list: list[dict], session: AsyncSession | None = None):
-        validated_data_list = [RoomsSchema.model_validate(d) for d in incoming_data_list]
+    async def multi_create(incoming_data_list_dto: list[RoomsSchema], session: AsyncSession | None = None):
 
-        rooms = [Rooms(**room.model_dump()) for room in validated_data_list]
+        rooms = [Rooms(**room.model_dump()) for room in incoming_data_list_dto]
 
         session.add_all(rooms)
 
@@ -45,11 +44,11 @@ class RoomsOrm(BaseOrm):
     @staticmethod
     async def get_price_per_night(id_to_find: int, session: AsyncSession | None = None):
         query = (
-            select(Rooms)
+            select(Rooms.price_per_night)
             .filter_by(id=id_to_find)
         )
         result = await session.execute(query)
-        price = result.scalar().price_per_night
+        price = result.first()[0]
         return price
 
 

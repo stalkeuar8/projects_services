@@ -4,19 +4,23 @@ from app.utils.transaction_deco import transaction
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 import asyncio
-
+import datetime
 
 class BookingsOrm:
 
     @transaction
     @staticmethod
-    async def new_booking(incoming_data: dict, session: AsyncSession | None = None):
-        validated_data = BookingsSchema.model_validate(incoming_data)
+    async def new_booking(incoming_data_dto: BookingsSchema, session: AsyncSession | None = None):
 
-        booking = Bookings(**validated_data.model_dump())
+        booking = Bookings(**incoming_data_dto.model_dump())
             
         session.add(booking)
+        await session.flush()
+
+        booking_id = booking.id
+
         await session.commit()
+        return booking_id
 
 
 
@@ -84,14 +88,20 @@ class BookingsOrm:
 
     @transaction
     @staticmethod
-    async def check_room_status(room_id: int, session: AsyncSession | None = None):
+    async def check_is_available(room_id: int, check_in: datetime.datetime, check_out: datetime.datetime, session: AsyncSession | None = None):
         query = (
             select(Bookings)
-            .filter_by(room_id=room_id)
+            .where(
+                Bookings.room_id == room_id,
+                Bookings.status != 'canceled', 
+                Bookings.check_in < check_out, 
+                Bookings.check_out > check_in
+            )
             .order_by(Bookings.id.desc())
-            .limit(1)
         )
         result = await session.execute(query)
-        room_info = result.scalar_one_or_none()
-
-        return room_info
+        booking = result.scalars().first()
+        if booking:
+            return False
+        
+        return True

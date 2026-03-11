@@ -1,5 +1,6 @@
 from app.models.booking import Clients
 from app.orms.base_orm import BaseOrm
+from app.schemas.clients_schemas import ClientsSchema
 from app.utils.transaction_deco import transaction
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession 
@@ -9,16 +10,16 @@ class ClientsOrm(BaseOrm):
 
     @transaction
     @staticmethod
-    async def create(incoming_data: dict, session: AsyncSession = None):
-        new_client = Clients(**incoming_data)
+    async def create(incoming_data_dto: ClientsSchema, session: AsyncSession = None):
+        new_client = Clients(**incoming_data_dto.model_dump())
         session.add(new_client)
 
 
     @transaction
     @staticmethod
-    async def multi_create(incoming_data_list: list[dict], session: AsyncSession = None):
+    async def multi_create(incoming_data_list_dto: list[ClientsSchema], session: AsyncSession = None):
         clients = [
-            Clients(**client) for client in incoming_data_list
+            Clients(**client.model_dump()) for client in incoming_data_list_dto
         ]
 
         session.add_all(clients)

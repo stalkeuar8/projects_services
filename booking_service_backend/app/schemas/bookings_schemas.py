@@ -8,13 +8,6 @@ class BookingStatus(str, Enum):
     pending = 'pending'
     completed = 'completed'
     canceled = 'canceled'
-
-
-class BookingsCreateDTO(BaseModel):
-    room_id: int
-    client_id: int
-    check_in: datetime.datetime
-    check_out: datetime.datetime
     
 
 class BookingsSchema(BaseModel):
@@ -36,6 +29,6 @@ class BookingsSchema(BaseModel):
 
     @model_validator(mode='after')
     def validate_check_out(self):
-        if BookingsSchema.check_out < BookingsSchema.check_in + datetime.timedelta(days=1):
-            raise ValueError("Check out date must be later than check in plus 1 day!")
+        if self.check_out < self.check_in + datetime.timedelta(days=1):
+            raise ValueError("BookingsSchema ERROR: Value 'check_out' must be later than check in plus 1 day!")
         return self
