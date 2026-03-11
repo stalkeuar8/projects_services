@@ -9,7 +9,10 @@ from app.utils.transaction_deco import transaction
 from app.services.base_service import BaseService
 from app.schemas.bookings_schemas import BookingsSchema
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import update
 import datetime
+import asyncio
+import random 
 
 # MAKE BASE SERVICE AND INHERIT!!!
 
@@ -55,3 +58,30 @@ class BookingService(BaseService):
          new_booking_id = await BookingsOrm.new_booking(incoming_data_dto=dto, session=session)
          
          return new_booking_id
+    
+
+
+    @transaction
+    async def approve_booking(self, booking_id: int, session: AsyncSession | None = None):
+        time_to_sleep = random.randint(60, 120)
+        await asyncio.sleep(time_to_sleep)
+
+        chance = random.randint(1, 100)
+
+        if 90 <= chance <= 100:
+            query = (
+                update(Bookings)
+                .values(Bookings.status=='canceled')
+                .where(Bookings.id==booking_id)
+            )
+
+        else:
+            query = (
+                update(Bookings)
+                .values(Bookings.status=='booked')
+                .where(Bookings.id==booking_id)
+            )
+
+        await session.execute(query)
+
+        
