@@ -51,7 +51,7 @@ class RoomsOrm(BaseOrm):
             )
 
         if filters.city:
-            query = query.where(Hotels.city == filters.country).options(
+            query = query.where(Hotels.city == filters.city).options(
                 contains_eager(Rooms.hotel)
             )
 
