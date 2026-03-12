@@ -1,24 +1,21 @@
 from app.models.hotel import Hotels
 from app.schemas.hotels_schemas import HotelsSchema
 from app.orms.base_orm import BaseOrm
-from app.utils.transaction_deco import transaction
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class HotelsOrm(BaseOrm):
 
-    @transaction
     @staticmethod
-    async def create(incoming_data_dto: HotelsSchema, session: AsyncSession | None = None):
+    async def create(incoming_data_dto: HotelsSchema, session: AsyncSession):
         hotel = Hotels(**incoming_data_dto.model_dump())
 
         session.add(hotel)
 
 
-    @transaction
     @staticmethod
-    async def multi_create(incoming_data_list_dto: list[HotelsSchema], session: AsyncSession | None = None):
+    async def multi_create(incoming_data_list_dto: list[HotelsSchema], session: AsyncSession):
         hotels = [
             Hotels(**hotel.model_dump()) for hotel in incoming_data_list_dto
         ]
@@ -26,9 +23,8 @@ class HotelsOrm(BaseOrm):
         session.add_all(hotels)
     
 
-    @transaction
     @staticmethod
-    async def find_by_id(id_to_find: int, session: AsyncSession | None = None):
+    async def find_by_id(id_to_find: int, session: AsyncSession):
         query = (
             select(Hotels)
             .filter_by(id=id_to_find)
@@ -38,9 +34,8 @@ class HotelsOrm(BaseOrm):
         return hotel
     
 
-    @transaction
     @staticmethod
-    async def delete_by_id(id_to_delete: int, session: AsyncSession | None = None):
+    async def delete_by_id(id_to_delete: int, session: AsyncSession):
         query = (
             delete(Hotels)
             .where(Hotels.id == id_to_delete)

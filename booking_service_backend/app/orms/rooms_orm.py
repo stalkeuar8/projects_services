@@ -2,7 +2,6 @@ from app.models.hotel import Rooms, Hotels
 from app.schemas.rooms_schemas import RoomsSchema
 from app.orms.base_orm import BaseOrm
 from app.utils.room_search_filter import RoomSearchFilters
-from app.utils.transaction_deco import transaction
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import contains_eager
@@ -10,27 +9,25 @@ from sqlalchemy.orm import contains_eager
 
 class RoomsOrm(BaseOrm):
 
-    @transaction
+
     @staticmethod
-    async def create(incoming_data_dto: RoomsSchema, session: AsyncSession | None = None):
+    async def create(incoming_data_dto: RoomsSchema, session: AsyncSession):
 
         room = Rooms(**incoming_data_dto.model_dump())
 
         session.add(room)
 
 
-    @transaction
     @staticmethod
-    async def multi_create(incoming_data_list_dto: list[RoomsSchema], session: AsyncSession | None = None):
+    async def multi_create(incoming_data_list_dto: list[RoomsSchema], session: AsyncSession):
 
         rooms = [Rooms(**room.model_dump()) for room in incoming_data_list_dto]
 
         session.add_all(rooms)
 
 
-    @transaction
     @staticmethod
-    async def find_by_id(id_to_find: int, session: AsyncSession | None = None):
+    async def find_by_id(id_to_find: int, session: AsyncSession):
         query = (
             select(Rooms)
             .filter_by(id=id_to_find)
@@ -40,9 +37,8 @@ class RoomsOrm(BaseOrm):
         return room
     
 
-    @transaction
     @staticmethod
-    async def get_price_per_night(id_to_find: int, session: AsyncSession | None = None):
+    async def get_price_per_night(id_to_find: int, session: AsyncSession):
         query = (
             select(Rooms.price_per_night)
             .filter_by(id=id_to_find)
@@ -52,9 +48,8 @@ class RoomsOrm(BaseOrm):
         return price
 
 
-    @transaction
     @staticmethod
-    async def find_room_by_filters(filters: RoomSearchFilters, session: AsyncSession = None):
+    async def find_room_by_filters(filters: RoomSearchFilters, session: AsyncSession):
         validated_filters = filters.model_validate(filters)
 
         query = (
@@ -179,9 +174,8 @@ class RoomsOrm(BaseOrm):
 
 
 
-    @transaction
     @staticmethod
-    async def delete_by_id(id_to_delete: int, session: AsyncSession | None = None):
+    async def delete_by_id(id_to_delete: int, session: AsyncSession):
         query = (
             delete(Rooms)
             .where(Rooms.id == id_to_delete)
