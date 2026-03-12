@@ -6,25 +6,27 @@ import datetime
 
 
 class Clients(Base):
-    __tablename__ = 'clients'
+    __tablename__ = "clients"
 
     id: Mapped[id_primary_key]
     full_name: Mapped[non_empty_str]
     phone_number: Mapped[non_empty_str] = mapped_column(unique=True)
 
-    bookings: Mapped[list['Bookings']] = relationship(back_populates='client')
+    bookings: Mapped[list["Bookings"]] = relationship(back_populates="client")
 
 
 class Bookings(Base):
-    __tablename__ = 'bookings'
+    __tablename__ = "bookings"
 
     id: Mapped[id_primary_key]
-    room_id: Mapped[not_null_int] = mapped_column(ForeignKey('rooms.id'))
-    client_id: Mapped[not_null_int] = mapped_column(ForeignKey('clients.id'))
-    check_in: Mapped[datetime.datetime] = mapped_column(server_default=text("TIMEZONE('utc', now())"), nullable=False)
+    room_id: Mapped[not_null_int] = mapped_column(ForeignKey("rooms.id"))
+    client_id: Mapped[not_null_int] = mapped_column(ForeignKey("clients.id"))
+    check_in: Mapped[datetime.datetime] = mapped_column(
+        server_default=text("TIMEZONE('utc', now())"), nullable=False
+    )
     check_out: Mapped[datetime.datetime]
     total_price: Mapped[not_null_int]
-    status: Mapped[non_empty_str] = mapped_column(default='pending')
+    status: Mapped[non_empty_str] = mapped_column(default="pending")
 
-    client: Mapped['Clients'] = relationship(back_populates='bookings')
-    room: Mapped['Rooms'] = relationship()
+    client: Mapped["Clients"] = relationship(back_populates="bookings")
+    room: Mapped["Rooms"] = relationship()

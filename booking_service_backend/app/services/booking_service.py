@@ -9,52 +9,61 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import update
 import datetime
 import asyncio
-import random 
+import random
 
 
 class BookingService(BaseService):
 
-    async def search_matching_rooms(self, filters: RoomSearchFilters, session: AsyncSession):
-        print(f"Finding matching rooms by filters: {filters.model_dump(exclude_none=True)}")
+    async def search_matching_rooms(
+        self, filters: RoomSearchFilters, session: AsyncSession
+    ):
+        print(
+            f"Finding matching rooms by filters: {filters.model_dump(exclude_none=True)}"
+        )
 
         rooms = await RoomsOrm.find_room_by_filters(filters=filters, session=session)
 
         return rooms
-    
 
-    async def check_available(self, dto: BookingsCheckAvailableSchema, session: AsyncSession):
+    async def check_available(
+        self, dto: BookingsCheckAvailableSchema, session: AsyncSession
+    ):
         room_id = dto.room_id
         check_in = dto.check_in
         check_out = dto.check_out
 
-        room_status: Bookings = await BookingsOrm.check_is_available(room_id=room_id, check_in=check_in, check_out=check_out, session=session)
-    
-        return room_status
-            
+        room_status: Bookings = await BookingsOrm.check_is_available(
+            room_id=room_id, check_in=check_in, check_out=check_out, session=session
+        )
 
-    async def prepare_dto(self, short_dto: BookingsCheckAvailableSchema, session: AsyncSession):
-        
-        price_per_night = await RoomsOrm.get_price_per_night(id_to_find=short_dto.room_id, session=session)
+        return room_status
+
+    async def prepare_dto(
+        self, short_dto: BookingsCheckAvailableSchema, session: AsyncSession
+    ):
+
+        price_per_night = await RoomsOrm.get_price_per_night(
+            id_to_find=short_dto.room_id, session=session
+        )
         total_days = (short_dto.check_out - short_dto.check_in).days
-        
+
         dto = BookingsSchema(
             room_id=short_dto.room_id,
             client_id=short_dto.client_id,
             check_in=short_dto.check_in,
             check_out=short_dto.check_out,
             total_price=total_days * price_per_night,
-            status='pending'
+            status="pending",
         )
 
-        return dto 
-    
+        return dto
 
     async def new_booking(self, dto: BookingsSchema, session: AsyncSession):
-         new_booking_id = await BookingsOrm.new_booking(incoming_data_dto=dto, session=session)
-         
-         return new_booking_id
-    
+        new_booking_id = await BookingsOrm.new_booking(
+            incoming_data_dto=dto, session=session
+        )
 
+        return new_booking_id
 
     async def approve_booking(self, booking_id: int):
         print(f"\nApproving....\n")
@@ -69,16 +78,16 @@ class BookingService(BaseService):
         if 90 <= chance <= 100:
             query = (
                 update(Bookings)
-                .values(status='canceled')
-                .where(Bookings.id==booking_id)
+                .values(status="canceled")
+                .where(Bookings.id == booking_id)
             )
             is_successful = False
 
         else:
             query = (
                 update(Bookings)
-                .values(status='booked')
-                .where(Bookings.id==booking_id)
+                .values(status="booked")
+                .where(Bookings.id == booking_id)
             )
             is_successful = True
 
@@ -88,4 +97,3 @@ class BookingService(BaseService):
             await session.commit()
 
         return is_successful
-        

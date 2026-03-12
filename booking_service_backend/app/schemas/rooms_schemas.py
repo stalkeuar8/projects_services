@@ -7,10 +7,10 @@ PriceValid = Annotated[int, Field(ge=0)]
 
 
 class RoomCategory(str, Enum):
-    standart = 'standart'
-    superior = 'superior'
-    lux = 'lux'
-    presidental = 'presidental'
+    standart = "standart"
+    superior = "superior"
+    lux = "lux"
+    presidental = "presidental"
 
 
 class RoomsSchema(BaseModel):
@@ -18,4 +18,3 @@ class RoomsSchema(BaseModel):
     category: RoomCategory
     capacity: CapacityValid
     price_per_night: PriceValid
-

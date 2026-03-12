@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+
 class ClientsSchema(BaseModel):
 
     id: int

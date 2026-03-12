@@ -8,14 +8,13 @@ class BackgroundTaskObserver:
         self.inactive_tasks: set[Coroutine] = tasks
         self.active_tasks: set[asyncio.Task] = set()
 
-
     async def __aenter__(self):
         for task in self.inactive_tasks:
             self.active_tasks.add(asyncio.create_task(task))
         self.inactive_tasks = set()
 
         return self
-    
+
     async def __aexit__(self, exc_type, exc, tb):
         for task in self.active_tasks:
             task.cancel()
@@ -24,10 +23,10 @@ class BackgroundTaskObserver:
         self.active_tasks = set()
 
         if exc_type is not None:
-            #example (remove in prod)
-            print(f'\nError occured: {exc}. Background tasks canceled.')
+            # example (remove in prod)
+            print(f"\nError occured: {exc}. Background tasks canceled.")
 
-        #example (remove in prod)
-        print(f'\nBackground tasks canceled.')
+        # example (remove in prod)
+        print(f"\nBackground tasks canceled.")
 
         return True
