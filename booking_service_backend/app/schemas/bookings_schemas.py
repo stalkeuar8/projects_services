@@ -10,6 +10,13 @@ class BookingStatus(str, Enum):
     canceled = 'canceled'
     
 
+class BookingsCheckAvailableSchema(BaseModel):
+    room_id: int
+    check_in: datetime.datetime
+    check_out: datetime.datetime
+
+
+
 class BookingsSchema(BaseModel):
     room_id: int
     client_id: int

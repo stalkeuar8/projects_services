@@ -24,8 +24,10 @@ class BackgroundTaskObserver:
         self.active_tasks = set()
 
         if exc_type is not None:
+            #example (remove in prod)
             print(f'\nError occured: {exc}. Background tasks canceled.')
 
+        #example (remove in prod)
         print(f'\nBackground tasks canceled.')
 
         return True

@@ -1,5 +1,4 @@
-from sqlalchemy import MetaData, ForeignKey, text
-from sqlalchemy.orm import Mapped, mapped_column, relationship, DeclarativeBase
+from sqlalchemy.orm import mapped_column, DeclarativeBase
 from typing import Annotated
 
 id_primary_key = Annotated[int, mapped_column(primary_key=True)]

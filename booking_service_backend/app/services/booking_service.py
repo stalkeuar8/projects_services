@@ -1,19 +1,16 @@
-from app.models.booking import Bookings, Clients
-from app.models.hotel import Hotels, Rooms
+from app.models.booking import Bookings
 from app.utils.room_search_filter import RoomSearchFilters
 from app.orms.bookings_orm import BookingsOrm
-from app.orms.hotels_orm import HotelsOrm
 from app.orms.rooms_orm import RoomsOrm
-from app.orms.clients_orm import ClientsOrm
 from app.services.base_service import BaseService
-from app.schemas.bookings_schemas import BookingsSchema
+from app.schemas.bookings_schemas import BookingsSchema, BookingsCheckAvailableSchema
 from app.settings.database import async_session_factory
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import update
 import datetime
 import asyncio
 import random 
-# MAKE BASE SERVICE AND INHERIT!!!
+
 
 class BookingService(BaseService):
 
@@ -25,23 +22,26 @@ class BookingService(BaseService):
         return rooms
     
 
-    async def check_available(self, room_id: int, check_in: datetime.datetime, check_out: datetime.datetime, session: AsyncSession):
-    
+    async def check_available(self, dto: BookingsCheckAvailableSchema, session: AsyncSession):
+        room_id = dto.room_id
+        check_in = dto.check_in
+        check_out = dto.check_out
+
         room_status: Bookings = await BookingsOrm.check_is_available(room_id=room_id, check_in=check_in, check_out=check_out, session=session)
     
         return room_status
             
 
-    async def prepare_dto(self, room_id: int, client_id: int, check_in: datetime.datetime, check_out: datetime.datetime, session: AsyncSession):
+    async def prepare_dto(self, short_dto: BookingsCheckAvailableSchema, session: AsyncSession):
         
-        price_per_night = await RoomsOrm.get_price_per_night(id_to_find=room_id, session=session)
-        total_days = (check_out - check_in).days
+        price_per_night = await RoomsOrm.get_price_per_night(id_to_find=short_dto.room_id, session=session)
+        total_days = (short_dto.check_out - short_dto.check_in).days
         
         dto = BookingsSchema(
-            room_id=room_id,
-            client_id=client_id,
-            check_in=check_in,
-            check_out=check_out,
+            room_id=short_dto.room_id,
+            client_id=short_dto.client_id,
+            check_in=short_dto.check_in,
+            check_out=short_dto.check_out,
             total_price=total_days * price_per_night,
             status='pending'
         )

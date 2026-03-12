@@ -1,8 +1,7 @@
 from app.schemas.bookings_schemas import BookingsSchema
-from app.models.booking import Bookings, Clients
+from app.models.booking import Bookings
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-import asyncio
 import datetime
 
 class BookingsOrm:

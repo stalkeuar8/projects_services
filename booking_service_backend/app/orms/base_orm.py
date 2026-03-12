@@ -1,6 +1,5 @@
 from app.models.base import Base
 from app.settings.database import async_session_factory, async_engine
-from app.utils.transaction_deco import transaction
 from abc import ABC, abstractmethod
 from sqlalchemy.ext.asyncio import AsyncSession
 
