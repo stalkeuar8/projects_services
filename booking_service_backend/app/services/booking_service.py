@@ -59,7 +59,7 @@ class BookingService(BaseService):
         return dto
 
     async def new_booking(self, dto: BookingsSchema, session: AsyncSession):
-        new_booking_id = await BookingsOrm.new_booking(
+        new_booking_id = await BookingsOrm.create(
             incoming_data_dto=dto, session=session
         )
 

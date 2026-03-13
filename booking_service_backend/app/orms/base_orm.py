@@ -2,31 +2,102 @@ from app.models.base import Base
 from app.settings.database import async_session_factory, async_engine
 from abc import ABC, abstractmethod
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, delete, inspect
+from pydantic import BaseModel
+from typing import TypeVar, Generic, Sequence, Type, Union
 
+T = TypeVar("T")
 
 async def create_tables():
     async with async_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
 
-class BaseOrm(ABC):
+class BaseOrm(Generic[T]):
 
-    @staticmethod
-    @abstractmethod
-    async def create(session: AsyncSession, inserting_data: dict):
-        pass
+    model: Type[T] = None
 
-    @staticmethod
-    @abstractmethod
-    async def multi_create(session: AsyncSession, inserting_data_list: list[dict]):
-        pass
+    @classmethod
+    async def create(cls, session: AsyncSession, inserting_data_dto: BaseModel) -> T:
+        
+        new_obj = cls.model(**inserting_data_dto.model_dump())
 
-    @staticmethod
-    @abstractmethod
-    async def find_by_id(session: AsyncSession, id_to_find: int):
-        pass
+        session.add(new_obj)
+        await session.flush()
+        
+        return new_obj
 
-    @staticmethod
-    @abstractmethod
-    async def delete_by_id(session: AsyncSession, id_to_delete: int):
-        pass
+
+    @classmethod
+    async def multi_create(cls, session: AsyncSession, inserting_data_list_dto: list[BaseModel]) -> Sequence[T]:
+        
+        new_objs = [cls.model(**obj_info.model_dump()) for obj_info in inserting_data_list_dto]
+
+        session.add_all(new_objs)
+        await session.flush()
+
+        return new_objs
+
+    @classmethod
+    async def find_all(cls, session: AsyncSession, filters: dict) -> Sequence[T]:
+
+        mapper = inspect(cls.model)
+        valid_columns = [colomn.key for colomn in mapper.attrs]
+
+        for key in filters:
+            if key not in valid_columns:
+                raise ValueError(f"{cls.model} ERROR: param '{key}' does not exists in '{cls.model}' model")
+
+        query = (
+            select(cls.model)
+            .filter_by(**filters)
+        )
+
+        results = await session.execute(query)
+        found_objs = results.scalars().all()
+
+        if not found_objs:
+            raise ValueError(f"{cls.model} ERROR: nothing found in '{cls.model}' model by filters: {[filters]}")
+        
+        return found_objs
+        
+
+    @classmethod
+    async def find_one_or_none(cls, session: AsyncSession, filters: dict) -> T:
+
+        mapper = inspect(cls.model)
+        valid_columns = [colomn.key for colomn in mapper.attrs]
+
+        for key in filters:
+            if key not in valid_columns:
+                raise ValueError(f"{cls.model} ERROR: param '{key}' does not exists in '{cls.model}' model")
+
+        query = (
+            select(cls.model)
+            .filter_by(**filters)
+        )
+
+        result = await session.execute(query)
+        found_obj = result.scalar_one_or_none()
+
+        if not found_obj:
+            raise ValueError(f"{cls.model} ERROR: nothing found in '{cls.model}' model by filters: {[filters]}")
+        
+        return found_obj
+
+
+    @classmethod
+    async def delete_by_id(cls, session: AsyncSession, id_to_delete: int) -> T:
+        
+        query = (
+            delete(cls.model)
+            .filter_by(id=id_to_delete)
+            .returning(cls.model)
+        )
+        result = await session.execute(query)
+        deleted_obj = result.scalar_one_or_none()
+
+        if not deleted_obj:
+            raise ValueError(f"{cls.model} ERROR: obj with id '{id_to_delete}' does not exists in '{cls.model}' model")
+
+        return deleted_obj

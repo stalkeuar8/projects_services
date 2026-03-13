@@ -11,7 +11,6 @@ class Settings(BaseSettings):
     @property
     def DATABASE_async_url(self):
         url = f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASS}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
-        print(f"Connecting to: {url}")
         return url
 
     model_config = SettingsConfigDict(env_file=".env")

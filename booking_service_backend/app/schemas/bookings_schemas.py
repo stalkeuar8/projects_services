@@ -11,6 +11,7 @@ class BookingStatus(str, Enum):
 
 
 class BookingsCheckAvailableSchema(BaseModel):
+    client_id: int
     room_id: int
     check_in: datetime.datetime
     check_out: datetime.datetime

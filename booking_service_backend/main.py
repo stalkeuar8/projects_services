@@ -53,6 +53,7 @@ async def main():
             #         print(f"Hotel name: {room.hotel.name}, room id: {room.id}, price per night: {room.price_per_night}")
             #     print("-----")
 
+            #EXAMPLE!!! DONT RUN LIKE THIS!!!
             incoming_choice_example = {
                 "client_id": "integer",
                 "room_id": "integer",
