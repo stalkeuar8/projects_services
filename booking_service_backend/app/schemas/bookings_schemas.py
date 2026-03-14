@@ -6,6 +6,7 @@ import datetime
 class BookingStatus(str, Enum):
     booked = "booked"
     pending = "pending"
+    checked_in = 'checked in'
     completed = "completed"
     canceled = "canceled"
 
@@ -20,6 +21,7 @@ class BookingsCheckAvailableSchema(BaseModel):
 class BookingsSchema(BaseModel):
     room_id: int
     client_id: int
+    created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
     check_in: datetime.datetime
     check_out: datetime.datetime
     total_price: int = Field(ge=0)
@@ -28,7 +30,7 @@ class BookingsSchema(BaseModel):
     @field_validator("check_in")
     @classmethod
     def validate_date(cls, date: datetime.datetime):
-        if date <= datetime.datetime.now():
+        if date <= datetime.datetime.now(tz=datetime.timezone.utc):
             raise ValueError(
                 "BookingsSchema ERROR: Value 'check_in' must be later than now!"
             )

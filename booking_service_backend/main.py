@@ -8,6 +8,7 @@ from app.models.hotel import Rooms
 from app.settings.database import async_session_factory
 from app.schemas.bookings_schemas import BookingsCheckAvailableSchema
 import asyncio
+import datetime
 
 
 async def main():
@@ -20,17 +21,19 @@ async def main():
     async with BackgroundTaskObserver(bg_coroutines) as bg_task_observer:
 
         # filters example (mention only filled filters by user, dont mention empty)
-        filters = RoomSearchFilters(
-            country="some country",
-            city="some city",
-            min_rating="min value: 1, type: int",
-            max_rating="max value: 5, type: int",
-            category="available categories: (standard, superior, lux, presidental), type: str",
-            min_capacity="min value: 1, max value: 3, type: int",
-            max_capacity="min value: 1, max value: 3, must be bigger than min_price, type: int",
-            min_price="min value: 1, type: int",
-            max_price="min value: 1, must be bigger than min_price, type: int",
-        )
+        # filters = RoomSearchFilters(
+        #     country="some country",
+        #     city="some city",
+        #     min_rating="min value: 1, type: int",
+        #     max_rating="max value: 5, type: int",
+        #     category="available categories: (standard, superior, lux, presidental), type: str",
+        #     min_capacity="min value: 1, max value: 3, type: int",
+        #     max_capacity="min value: 1, max value: 3, must be bigger than min_price, type: int",
+        #     min_price="min value: 1, type: int",
+        #     max_price="min value: 1, must be bigger than min_price, type: int",
+        # )
+
+        filters = RoomSearchFilters()
 
         async with async_session_factory.begin() as session:
 
@@ -38,11 +41,11 @@ async def main():
 
             await create_tables()
 
-            rooms: list[Rooms] = await booking_service.search_matching_rooms(
-                filters=filters, session=session
-            )
+            # rooms: list[Rooms] = await booking_service.search_matching_rooms(
+            #     filters=filters, session=session
+            # )
 
-            paginator = ResultsPaginator(rooms, 10)
+            # paginator = ResultsPaginator(rooms, 10)
 
             # EXAMPLE FOR CLI!!!!
             # matching_rooms_ids = []
@@ -54,11 +57,17 @@ async def main():
             #     print("-----")
 
             #EXAMPLE!!! DONT RUN LIKE THIS!!!
+            # incoming_choice_example = {
+            #     "client_id": "1",
+            #     "room_id": "integer",
+            #     "check_in": "datetime",
+            #     "check_out": "datetime",
+            # }
             incoming_choice_example = {
-                "client_id": "integer",
-                "room_id": "integer",
-                "check_in": "datetime",
-                "check_out": "datetime",
+                "client_id": 54,
+                "room_id": 3565,
+                "check_in": datetime.datetime(2027, 10, 10, tzinfo=datetime.timezone.utc),
+                "check_out": datetime.datetime(2027, 10, 20, tzinfo=datetime.timezone.utc),
             }
 
             short_dto_obj = BookingsCheckAvailableSchema(
@@ -75,9 +84,10 @@ async def main():
                 dto = await booking_service.prepare_dto(
                     short_dto=short_dto_obj, session=session
                 )
-                new_booking_id = await booking_service.new_booking(
+                new_booking_obj = await booking_service.new_booking(
                     dto=dto, session=session
                 )
+                new_booking_id = new_booking_obj.id
 
             else:
                 # example (remove in prod)
@@ -99,7 +109,7 @@ async def main():
                 )
 
             else:
-                # example (remove in prod)
+                # example (remove in prod)1
                 print(
                     f"Sorry, but hotel canceled your booking '{new_booking_id}' for room {short_dto_obj.room_id} for dates '{short_dto_obj.check_in}'-'{short_dto_obj.check_out}'"
                 )

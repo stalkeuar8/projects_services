@@ -1,17 +1,17 @@
 from app.models.base import Base
 from app.settings.database import async_session_factory, async_engine
-from abc import ABC, abstractmethod
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete, inspect
 from pydantic import BaseModel
-from typing import TypeVar, Generic, Sequence, Type, Union
+from typing import TypeVar, Generic, Sequence, Type
 
-T = TypeVar("T")
 
 async def create_tables():
     async with async_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
+
+T = TypeVar("T")
 
 class BaseOrm(Generic[T]):
 
@@ -57,7 +57,7 @@ class BaseOrm(Generic[T]):
         found_objs = results.scalars().all()
 
         if not found_objs:
-            raise ValueError(f"{cls.model} ERROR: nothing found in '{cls.model}' model by filters: {[filters]}")
+            return None
         
         return found_objs
         
@@ -81,7 +81,7 @@ class BaseOrm(Generic[T]):
         found_obj = result.scalar_one_or_none()
 
         if not found_obj:
-            raise ValueError(f"{cls.model} ERROR: nothing found in '{cls.model}' model by filters: {[filters]}")
+            return None
         
         return found_obj
 

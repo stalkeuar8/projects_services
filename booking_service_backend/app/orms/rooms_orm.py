@@ -14,10 +14,12 @@ class RoomsOrm(BaseOrm[Rooms]):
     async def get_price_per_night(id_to_find: int, session: AsyncSession):
         query = select(Rooms.price_per_night).filter_by(id=id_to_find)
         result = (await session.execute(query)).first()
+
         if result:
             price = result[0]
+            return price
 
-        return price
+        raise ValueError("ERROR While getting price per night.")
 
     @staticmethod
     async def find_room_by_filters(filters: RoomSearchFilters, session: AsyncSession):
