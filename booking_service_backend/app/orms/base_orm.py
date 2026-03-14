@@ -38,11 +38,12 @@ class BaseOrm(Generic[T]):
 
         return new_objs
 
+
     @classmethod
     async def find_all(cls, session: AsyncSession, filters: dict) -> Sequence[T]:
 
         mapper = inspect(cls.model)
-        valid_columns = [colomn.key for colomn in mapper.attrs]
+        valid_columns = [column.key for column in mapper.attrs]
 
         for key in filters:
             if key not in valid_columns:
@@ -66,7 +67,7 @@ class BaseOrm(Generic[T]):
     async def find_one_or_none(cls, session: AsyncSession, filters: dict) -> T:
 
         mapper = inspect(cls.model)
-        valid_columns = [colomn.key for colomn in mapper.attrs]
+        valid_columns = [column.key for column in mapper.attrs]
 
         for key in filters:
             if key not in valid_columns:

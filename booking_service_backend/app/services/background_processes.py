@@ -38,7 +38,7 @@ class BackgroundProcesses:
                     check_in_query = (
                         update(Bookings)
                         .values(status="checked in")
-                        .where(Bookings.check_in > current_time)
+                        .where(Bookings.check_in < current_time)
                     )
 
                     await session.execute(check_out_query)
