@@ -3,7 +3,7 @@ services:
   postgres:
     image: postgres:17-alpine
     container_name: postgres_booking_service_db
-    restart: always
+    restart: no
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASS}   
