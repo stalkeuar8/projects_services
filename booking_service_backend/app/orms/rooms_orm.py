@@ -1,3 +1,5 @@
+from typing import Sequence
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import contains_eager
@@ -11,7 +13,7 @@ class RoomsOrm(BaseOrm[Rooms]):
     model = Rooms
 
     @staticmethod
-    async def get_price_per_night(id_to_find: int, session: AsyncSession):
+    async def get_price_per_night(id_to_find: int, session: AsyncSession) -> int:
         query = select(Rooms.price_per_night).filter_by(id=id_to_find)
         result = (await session.execute(query)).first()
 
@@ -22,7 +24,7 @@ class RoomsOrm(BaseOrm[Rooms]):
         raise ValueError("ERROR While getting price per night.")
 
     @staticmethod
-    async def find_room_by_filters(filters: RoomSearchFilters, session: AsyncSession):
+    async def find_room_by_filters(filters: RoomSearchFilters, session: AsyncSession) -> Sequence[Rooms]:
 
         query = select(Rooms).join(Rooms.hotel)
 

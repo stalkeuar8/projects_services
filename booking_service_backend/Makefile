@@ -52,3 +52,4 @@ install:
 	venv/bin/pip install -r requirements.txt
 
 start: editor update install check rebuild
+

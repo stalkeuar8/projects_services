@@ -1,15 +1,17 @@
+from typing import Self
+
 from app.models.hotel import Rooms
 
 
 class ResultsPaginator:
-    def __init__(self, results: list[Rooms], results_per_page: int = 5):
+    def __init__(self, results: list[Rooms], results_per_page: int = 5) -> None:
         self.current_group = -1
         self.groups = [results[i : i + results_per_page] for i in range(0, len(results), results_per_page)]
 
-    def __iter__(self):
+    def __iter__(self) -> Self:
         return self
 
-    def __next__(self):
+    def __next__(self) -> list[Rooms]:
         if not self.current_group > len(self.groups) - 2:
             self.current_group += 1
             next_group = self.groups[self.current_group]
@@ -17,7 +19,7 @@ class ResultsPaginator:
         else:
             raise StopIteration("You are on the last page, there is no next pages")
 
-    def previous(self):
+    def previous(self) -> list[Rooms]:
         if self.current_group == 0:
             raise StopIteration("You are on the first page, there is no previous page.")
 

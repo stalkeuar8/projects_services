@@ -6,5 +6,5 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 class BaseService(ABC):
     @abstractmethod
-    async def prepare_dto(self, short_dto: BaseModel, session: AsyncSession):
+    async def prepare_dto(self, short_dto: BaseModel, session: AsyncSession) -> BaseModel:
         pass

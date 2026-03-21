@@ -9,7 +9,7 @@ from app.settings.database import async_session_factory
 
 class BackgroundProcesses:
     @staticmethod
-    async def background_bookings_cleaner(time_frequency_mins: int = 15):
+    async def background_bookings_cleaner(time_frequency_mins: int = 15) -> None:
         while True:
             try:
                 async with async_session_factory.begin() as session:
@@ -24,7 +24,7 @@ class BackgroundProcesses:
             await asyncio.sleep(time_frequency_mins * 60)
 
     @staticmethod
-    async def background_status_checker():
+    async def background_status_checker() -> None:
         while True:
             try:
                 async with async_session_factory.begin() as session:

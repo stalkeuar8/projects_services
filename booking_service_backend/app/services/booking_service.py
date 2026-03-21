@@ -1,11 +1,13 @@
 import asyncio
 import datetime
 import random
+from typing import Sequence
 
 from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.booking import Bookings
+from app.models.hotel import Rooms
 from app.orms.bookings_orm import BookingsOrm
 from app.orms.rooms_orm import RoomsOrm
 from app.schemas.bookings_schemas import BookingsCheckAvailableSchema, BookingsSchema
@@ -15,14 +17,14 @@ from app.utils.room_search_filter import RoomSearchFilters
 
 
 class BookingService(BaseService):
-    async def search_matching_rooms(self, filters: RoomSearchFilters, session: AsyncSession):
+    async def search_matching_rooms(self, filters: RoomSearchFilters, session: AsyncSession) -> Sequence[Rooms]:
         print(f"Finding matching rooms by filters: {filters.model_dump(exclude_none=True)}")
 
         rooms = await RoomsOrm.find_room_by_filters(filters=filters, session=session)
 
         return rooms
 
-    async def check_available(self, dto: BookingsCheckAvailableSchema, session: AsyncSession):
+    async def check_available(self, dto: BookingsCheckAvailableSchema, session: AsyncSession) -> bool:
         room_id = dto.room_id
         check_in = dto.check_in
         check_out = dto.check_out
@@ -31,7 +33,7 @@ class BookingService(BaseService):
 
         return room_status
 
-    async def prepare_dto(self, short_dto: BookingsCheckAvailableSchema, session: AsyncSession):
+    async def prepare_dto(self, short_dto: BookingsCheckAvailableSchema, session: AsyncSession) -> BookingsSchema:
 
         price_per_night = await RoomsOrm.get_price_per_night(id_to_find=short_dto.room_id, session=session)
         total_days = (short_dto.check_out - short_dto.check_in).days
@@ -47,13 +49,13 @@ class BookingService(BaseService):
 
         return dto
 
-    async def new_booking(self, dto: BookingsSchema, session: AsyncSession):
-        new_booking_id = await BookingsOrm.create(inserting_data_dto=dto, session=session)
+    async def new_booking(self, dto: BookingsSchema, session: AsyncSession) -> Bookings:
+        new_booking = await BookingsOrm.create(inserting_data_dto=dto, session=session)
 
-        return new_booking_id
+        return new_booking
 
-    async def approve_booking(self, booking_id: int):
-        print(f"\nApproving....\n")
+    async def approve_booking(self, booking_id: int) -> bool:
+        print("\nApproving....\n")
 
         time_to_sleep = random.randint(5, 10)
         await asyncio.sleep(time_to_sleep)

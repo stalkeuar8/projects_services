@@ -19,7 +19,7 @@ async def main():
         BackgroundProcesses.background_status_checker(),
     }
 
-    async with BackgroundTaskObserver(bg_coroutines) as bg_task_observer:
+    async with BackgroundTaskObserver(bg_coroutines):
         # filters example (mention only filled filters by user, dont mention empty)
         # filters = RoomSearchFilters(
         #     country="some country",
@@ -33,7 +33,7 @@ async def main():
         #     max_price="min value: 1, must be bigger than min_price, type: int",
         # )
 
-        filters = RoomSearchFilters()
+        # filters = RoomSearchFilters()
 
         async with async_session_factory.begin() as session:
             booking_service = BookingService()

@@ -13,10 +13,10 @@ class BookingsOrm(BaseOrm[Bookings]):
     model = Bookings
 
     @staticmethod
-    async def find_by_hotel_id(hotel_id: int, session: AsyncSession):
+    async def find_by_hotel_id(hotel_id: int, session: AsyncSession) -> Bookings | None:
         query = select(Bookings).join(Bookings.room).where(Rooms.hotel_id == hotel_id).options(contains_eager(Bookings.room))
         result = await session.execute(query)
-        booking = result.scalar()
+        booking = result.scalar_one_or_none()
         return booking
 
     @staticmethod
@@ -25,7 +25,7 @@ class BookingsOrm(BaseOrm[Bookings]):
         check_in: datetime.datetime,
         check_out: datetime.datetime,
         session: AsyncSession,
-    ):
+    ) -> bool:
         query = (
             select(Bookings)
             .where(

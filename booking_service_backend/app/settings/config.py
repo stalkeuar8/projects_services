@@ -9,7 +9,7 @@ class DatabaseSettings(BaseSettings):
     DB_PORT: int
 
     @property
-    def DATABASE_async_url(self):
+    def DATABASE_async_url(self) -> str:
         url = f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASS}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
         return url
 

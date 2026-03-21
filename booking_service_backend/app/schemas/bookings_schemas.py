@@ -1,5 +1,6 @@
 import datetime
 from enum import Enum
+from typing import Self
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -30,13 +31,13 @@ class BookingsSchema(BaseModel):
 
     @field_validator("check_in")
     @classmethod
-    def validate_date(cls, date: datetime.datetime):
+    def validate_date(cls, date: datetime.datetime) -> datetime.datetime:
         if date <= datetime.datetime.now(tz=datetime.timezone.utc):
             raise ValueError("BookingsSchema ERROR: Value 'check_in' must be later than now!")
         return date
 
     @model_validator(mode="after")
-    def validate_check_out(self):
+    def validate_check_out(self) -> Self:
         if self.check_out < self.check_in + datetime.timedelta(days=1):
             raise ValueError("BookingsSchema ERROR: Value 'check_out' must be later than check in plus 1 day!")
         return self

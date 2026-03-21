@@ -1,3 +1,5 @@
+from typing import Self
+
 from pydantic import BaseModel, model_validator
 
 from app.schemas.hotels_schemas import RatingValid
@@ -21,7 +23,7 @@ class RoomSearchFilters(BaseModel):
     max_price: PriceValid | None = None
 
     @model_validator(mode="after")
-    def validate_check_out(self):
+    def validate_check_out(self) -> Self:
         if self.min_rating and self.max_rating and self.min_rating >= self.max_rating:
             raise ValueError("RoomSearchFilters ERROR: Value 'min_rating' must be less than 'max_rating'!")
 
