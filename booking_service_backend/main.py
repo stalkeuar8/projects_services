@@ -1,14 +1,15 @@
-from app.orms.base_orm import create_tables
-from app.utils.room_search_filter import RoomSearchFilters
-from app.utils.bg_tasks_observer import BackgroundTaskObserver
-from app.utils.paginator import ResultsPaginator
-from app.services.background_processes import BackgroundProcesses
-from app.services.booking_service import BookingService
-from app.models.hotel import Rooms
-from app.settings.database import async_session_factory
-from app.schemas.bookings_schemas import BookingsCheckAvailableSchema
 import asyncio
 import datetime
+
+from app.models.hotel import Rooms
+from app.orms.base_orm import create_tables
+from app.schemas.bookings_schemas import BookingsCheckAvailableSchema
+from app.services.background_processes import BackgroundProcesses
+from app.services.booking_service import BookingService
+from app.settings.database import async_session_factory
+from app.utils.bg_tasks_observer import BackgroundTaskObserver
+from app.utils.paginator import ResultsPaginator
+from app.utils.room_search_filter import RoomSearchFilters
 
 
 async def main():
@@ -19,7 +20,6 @@ async def main():
     }
 
     async with BackgroundTaskObserver(bg_coroutines) as bg_task_observer:
-
         # filters example (mention only filled filters by user, dont mention empty)
         # filters = RoomSearchFilters(
         #     country="some country",
@@ -36,7 +36,6 @@ async def main():
         filters = RoomSearchFilters()
 
         async with async_session_factory.begin() as session:
-
             booking_service = BookingService()
 
             await create_tables()
@@ -56,7 +55,7 @@ async def main():
             #         print(f"Hotel name: {room.hotel.name}, room id: {room.id}, price per night: {room.price_per_night}")
             #     print("-----")
 
-            #EXAMPLE!!! DONT RUN LIKE THIS!!!
+            # EXAMPLE!!! DONT RUN LIKE THIS!!!
             # incoming_choice_example = {
             #     "client_id": "1",
             #     "room_id": "integer",
@@ -70,49 +69,32 @@ async def main():
                 "check_out": datetime.datetime(2027, 10, 20, tzinfo=datetime.timezone.utc),
             }
 
-            short_dto_obj = BookingsCheckAvailableSchema(
-                **incoming_choice_example
-            )  # validation and transfer
+            short_dto_obj = BookingsCheckAvailableSchema(**incoming_choice_example)  # validation and transfer
 
-            result = await booking_service.check_available(
-                dto=short_dto_obj, session=session
-            )
+            result = await booking_service.check_available(dto=short_dto_obj, session=session)
 
             new_booking_id = None
 
             if result:
-                dto = await booking_service.prepare_dto(
-                    short_dto=short_dto_obj, session=session
-                )
-                new_booking_obj = await booking_service.new_booking(
-                    dto=dto, session=session
-                )
+                dto = await booking_service.prepare_dto(short_dto=short_dto_obj, session=session)
+                new_booking_obj = await booking_service.new_booking(dto=dto, session=session)
                 new_booking_id = new_booking_obj.id
 
             else:
                 # example (remove in prod)
-                print(
-                    f"Sorry, but room {short_dto_obj.room_id} for dates '{short_dto_obj.check_in}'-'{short_dto_obj.check_out}' is not available, check other rooms or change dates!"
-                )
+                print(f"Sorry, but room {short_dto_obj.room_id} for dates '{short_dto_obj.check_in}'-'{short_dto_obj.check_out}' is not available, check other rooms or change dates!")
 
         if new_booking_id:
-
-            task_result = asyncio.create_task(
-                booking_service.approve_booking(booking_id=new_booking_id)
-            )
+            task_result = asyncio.create_task(booking_service.approve_booking(booking_id=new_booking_id))
             approving_result = await task_result
 
             if approving_result:
                 # example (remove in prod)
-                print(
-                    f"Room '{short_dto_obj.room_id}' successfully booked for dates '{short_dto_obj.check_in}'-'{short_dto_obj.check_out}'"
-                )
+                print(f"Room '{short_dto_obj.room_id}' successfully booked for dates '{short_dto_obj.check_in}'-'{short_dto_obj.check_out}'")
 
             else:
                 # example (remove in prod)1
-                print(
-                    f"Sorry, but hotel canceled your booking '{new_booking_id}' for room {short_dto_obj.room_id} for dates '{short_dto_obj.check_in}'-'{short_dto_obj.check_out}'"
-                )
+                print(f"Sorry, but hotel canceled your booking '{new_booking_id}' for room {short_dto_obj.room_id} for dates '{short_dto_obj.check_in}'-'{short_dto_obj.check_out}'")
                 print("Reason: hotel personal service reasons.")
 
 

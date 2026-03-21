@@ -1,8 +1,10 @@
-from sqlalchemy import ForeignKey, text, DateTime, func
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from app.models.base import Base, id_primary_key, non_empty_str, not_null_int, datetime_utc_timezone
-from app.models.hotel import Rooms
 import datetime
+
+from sqlalchemy import DateTime, ForeignKey, func, text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.models.base import Base, datetime_utc_timezone, id_primary_key, non_empty_str, not_null_int
+from app.models.hotel import Rooms
 
 
 class Clients(Base):

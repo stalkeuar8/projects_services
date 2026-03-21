@@ -1,5 +1,6 @@
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from app.models.base import Base, id_primary_key, non_empty_str, not_null_int
 
 
@@ -19,9 +20,7 @@ class Rooms(Base):
     __tablename__ = "rooms"
 
     id: Mapped[id_primary_key]
-    hotel_id: Mapped[not_null_int] = mapped_column(
-        ForeignKey("hotels.id", ondelete="CASCADE")
-    )
+    hotel_id: Mapped[not_null_int] = mapped_column(ForeignKey("hotels.id", ondelete="CASCADE"))
     category: Mapped[non_empty_str]
     capacity: Mapped[not_null_int]
     price_per_night: Mapped[not_null_int]

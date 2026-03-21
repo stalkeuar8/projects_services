@@ -1,7 +1,9 @@
 from functools import wraps
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.settings.database import async_session_factory
 from typing import Callable
+
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.settings.database import async_session_factory
 
 
 def transaction(func: Callable):

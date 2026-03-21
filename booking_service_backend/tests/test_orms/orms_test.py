@@ -6,8 +6,8 @@ import pytest_asyncio
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
-    create_async_engine,
     async_sessionmaker,
+    create_async_engine,
 )
 from sqlalchemy.pool import StaticPool
 
@@ -69,9 +69,7 @@ async def test_clients_orm_crud_operations(session: AsyncSession):
 
 @pytest.mark.asyncio
 async def test_hotels_and_rooms_orm_basic_crud(session: AsyncSession):
-    hotel_dto = HotelsSchema(
-        name="Test Hotel", country="Wonderland", city="Magic", rating=5
-    )
+    hotel_dto = HotelsSchema(name="Test Hotel", country="Wonderland", city="Magic", rating=5)
     await HotelsOrm.create(hotel_dto, session)
     await session.commit()
 
@@ -79,9 +77,7 @@ async def test_hotels_and_rooms_orm_basic_crud(session: AsyncSession):
     assert hotel is not None
     assert hotel.name == "Test Hotel"
 
-    room_dto = RoomsSchema(
-        hotel_id=hotel.id, category="lux", capacity=2, price_per_night=100
-    )
+    room_dto = RoomsSchema(hotel_id=hotel.id, category="lux", capacity=2, price_per_night=100)
     await RoomsOrm.create(room_dto, session)
     await session.commit()
 
@@ -116,15 +112,11 @@ async def test_hotels_and_rooms_orm_basic_crud(session: AsyncSession):
 @pytest.mark.asyncio
 async def test_bookings_orm_and_availability(session: AsyncSession):
     # Setup hotel / room / client
-    hotel_dto = HotelsSchema(
-        name="Book Hotel", country="Nowhere", city="Nocity", rating=3
-    )
+    hotel_dto = HotelsSchema(name="Book Hotel", country="Nowhere", city="Nocity", rating=3)
     await HotelsOrm.create(hotel_dto, session)
     await session.commit()
 
-    room_dto = RoomsSchema(
-        hotel_id=1, category="standart", capacity=1, price_per_night=50
-    )
+    room_dto = RoomsSchema(hotel_id=1, category="standart", capacity=1, price_per_night=50)
     await RoomsOrm.create(room_dto, session)
     await session.commit()
 

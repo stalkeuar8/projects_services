@@ -1,24 +1,23 @@
-from app.models.booking import Bookings
-from app.models.hotel import Rooms
-from app.orms.base_orm import BaseOrm
+import datetime
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import contains_eager
-import datetime
+
+from app.models.booking import Bookings
+from app.models.hotel import Rooms
+from app.orms.base_orm import BaseOrm
 
 
 class BookingsOrm(BaseOrm[Bookings]):
-
     model = Bookings
-
 
     @staticmethod
     async def find_by_hotel_id(hotel_id: int, session: AsyncSession):
-        query = select(Bookings).join(Bookings.room).where(Rooms.hotel_id==hotel_id).options(contains_eager(Bookings.room))
+        query = select(Bookings).join(Bookings.room).where(Rooms.hotel_id == hotel_id).options(contains_eager(Bookings.room))
         result = await session.execute(query)
         booking = result.scalar()
         return booking
-
 
     @staticmethod
     async def check_is_available(

@@ -1,9 +1,8 @@
-from typing import Coroutine
 import asyncio
+from typing import Coroutine
 
 
 class BackgroundTaskObserver:
-
     def __init__(self, tasks: set[Coroutine]):
         self.inactive_tasks: set[Coroutine] = tasks
         self.active_tasks: set[asyncio.Task] = set()

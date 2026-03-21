@@ -1,9 +1,11 @@
-from app.models.base import Base
-from app.settings.database import async_session_factory, async_engine
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, delete, inspect
+from typing import Generic, Sequence, Type, TypeVar
+
 from pydantic import BaseModel
-from typing import TypeVar, Generic, Sequence, Type
+from sqlalchemy import delete, inspect, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.base import Base
+from app.settings.database import async_engine, async_session_factory
 
 
 async def create_tables():
@@ -13,31 +15,29 @@ async def create_tables():
 
 T = TypeVar("T")
 
-class BaseOrm(Generic[T]):
 
+class BaseOrm(Generic[T]):
     model: Type[T] = None
 
     @classmethod
     async def create(cls, session: AsyncSession, inserting_data_dto: BaseModel) -> T:
-        
+
         new_obj = cls.model(**inserting_data_dto.model_dump())
 
         session.add(new_obj)
         await session.flush()
-        
-        return new_obj
 
+        return new_obj
 
     @classmethod
     async def multi_create(cls, session: AsyncSession, inserting_data_list_dto: list[BaseModel]) -> Sequence[T]:
-        
+
         new_objs = [cls.model(**obj_info.model_dump()) for obj_info in inserting_data_list_dto]
 
         session.add_all(new_objs)
         await session.flush()
 
         return new_objs
-
 
     @classmethod
     async def find_all(cls, session: AsyncSession, filters: dict) -> Sequence[T]:
@@ -49,19 +49,15 @@ class BaseOrm(Generic[T]):
             if key not in valid_columns:
                 raise ValueError(f"{cls.model} ERROR: param '{key}' does not exists in '{cls.model}' model")
 
-        query = (
-            select(cls.model)
-            .filter_by(**filters)
-        )
+        query = select(cls.model).filter_by(**filters)
 
         results = await session.execute(query)
         found_objs = results.scalars().all()
 
         if not found_objs:
             return None
-        
+
         return found_objs
-        
 
     @classmethod
     async def find_one_or_none(cls, session: AsyncSession, filters: dict) -> T:
@@ -73,28 +69,20 @@ class BaseOrm(Generic[T]):
             if key not in valid_columns:
                 raise ValueError(f"{cls.model} ERROR: param '{key}' does not exists in '{cls.model}' model")
 
-        query = (
-            select(cls.model)
-            .filter_by(**filters)
-        )
+        query = select(cls.model).filter_by(**filters)
 
         result = await session.execute(query)
         found_obj = result.scalar_one_or_none()
 
         if not found_obj:
             return None
-        
-        return found_obj
 
+        return found_obj
 
     @classmethod
     async def delete_by_id(cls, session: AsyncSession, id_to_delete: int) -> T:
-        
-        query = (
-            delete(cls.model)
-            .filter_by(id=id_to_delete)
-            .returning(cls.model)
-        )
+
+        query = delete(cls.model).filter_by(id=id_to_delete).returning(cls.model)
         result = await session.execute(query)
         deleted_obj = result.scalar_one_or_none()
 

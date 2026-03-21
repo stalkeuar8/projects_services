@@ -2,13 +2,9 @@ from app.models.hotel import Rooms
 
 
 class ResultsPaginator:
-
     def __init__(self, results: list[Rooms], results_per_page: int = 5):
         self.current_group = -1
-        self.groups = [
-            results[i : i + results_per_page]
-            for i in range(0, len(results), results_per_page)
-        ]
+        self.groups = [results[i : i + results_per_page] for i in range(0, len(results), results_per_page)]
 
     def __iter__(self):
         return self
