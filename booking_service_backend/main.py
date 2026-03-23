@@ -1,6 +1,8 @@
 import asyncio
 import datetime
 
+from fastapi import FastAPI
+
 from app.models.hotel import Rooms
 from app.orms.base_orm import create_tables
 from app.schemas.bookings_schemas import BookingsCheckAvailableSchema
@@ -11,6 +13,11 @@ from app.settings.database import async_session_factory
 # from app.utils.bg_tasks_observer import BackgroundTaskObserver
 from app.utils.paginator import ResultsPaginator
 from app.utils.room_search_filter import RoomSearchFilters
+
+
+
+# START FUNCS, ROUTERS
+
 
 
 # async def main() -> None:

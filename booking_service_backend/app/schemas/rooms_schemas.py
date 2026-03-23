@@ -19,3 +19,10 @@ class RoomsSchema(BaseModel):
     category: RoomCategory
     capacity: CapacityValid
     price_per_night: PriceValid
+
+
+class RoomsResponseSchema(BaseModel):
+    hotel_id: int
+    category: RoomCategory
+    capacity: CapacityValid
+    price_per_night: PriceValid

@@ -10,3 +10,10 @@ class HotelsSchema(BaseModel):
     country: str
     city: str
     rating: RatingValid
+
+
+class HotelsResponseSchema(BaseModel):
+    name: str
+    country: str
+    city: str
+    rating: RatingValid
