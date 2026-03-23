@@ -10,13 +10,12 @@ from app.models.booking import Bookings
 from app.models.hotel import Rooms
 from app.orms.bookings_orm import BookingsOrm
 from app.orms.rooms_orm import RoomsOrm
-from app.schemas.bookings_schemas import BookingsCheckAvailableSchema, BookingsSchema
-from app.services.base_service import BaseService
+from app.schemas.bookings_schemas import BookingsCheckAvailableSchema, BookingsSchema, BookingStatus
 from app.settings.database import async_session_factory
 from app.utils.room_search_filter import RoomSearchFilters
 
 
-class BookingService(BaseService):
+class BookingService:
     async def search_matching_rooms(self, filters: RoomSearchFilters, session: AsyncSession) -> Sequence[Rooms]:
         print(f"Finding matching rooms by filters: {filters.model_dump(exclude_none=True)}")
 
@@ -29,7 +28,7 @@ class BookingService(BaseService):
         check_in = dto.check_in
         check_out = dto.check_out
 
-        room_status: Bookings = await BookingsOrm.check_is_available(room_id=room_id, check_in=check_in, check_out=check_out, session=session)
+        room_status: bool = await BookingsOrm.check_is_available(room_id=room_id, check_in=check_in, check_out=check_out, session=session)
 
         return room_status
 
@@ -44,7 +43,7 @@ class BookingService(BaseService):
             check_in=short_dto.check_in,
             check_out=short_dto.check_out,
             total_price=total_days * price_per_night,
-            status="pending",
+            status=BookingStatus("pending"),
         )
 
         return dto

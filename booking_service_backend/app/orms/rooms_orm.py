@@ -14,11 +14,11 @@ class RoomsOrm(BaseOrm[Rooms]):
 
     @staticmethod
     async def get_price_per_night(id_to_find: int, session: AsyncSession) -> int:
-        query = select(Rooms.price_per_night).filter_by(id=id_to_find)
-        result = (await session.execute(query)).first()
+        query = select(Rooms).filter_by(id=id_to_find)
+        result = (await session.execute(query)).scalar()
 
         if result:
-            price = result[0]
+            price: int = result.price_per_night
             return price
 
         raise ValueError("ERROR While getting price per night.")
