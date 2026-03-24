@@ -12,6 +12,9 @@ from app.orms.base_orm import BaseOrm
 class BookingsOrm(BaseOrm[Bookings]):
     model = Bookings
 
+
+
+
     @staticmethod
     async def find_by_hotel_id(hotel_id: int, session: AsyncSession) -> Bookings | None:
         query = select(Bookings).join(Bookings.room).where(Rooms.hotel_id == hotel_id).options(contains_eager(Bookings.room))

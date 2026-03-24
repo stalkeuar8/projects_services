@@ -41,7 +41,7 @@ class RoomsOrm(BaseOrm[Rooms]):
             query = query.where((Hotels.rating < filters.max_rating) | (Hotels.rating == filters.max_rating))
 
         if filters.category:
-            query = query.filter_by(category=filters.category)
+            query = query.where(Rooms.category==filters.category)
 
         if filters.min_capacity:
             query = query.where((Rooms.capacity > filters.min_capacity) | (Rooms.capacity == filters.min_capacity))

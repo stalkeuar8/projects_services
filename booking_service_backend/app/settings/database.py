@@ -1,8 +1,8 @@
-from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine, AsyncSession
+from typing import AsyncGenerator
+
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 
 from app.settings.config import database_settings
-
-from typing import AsyncGenerator
 
 async_engine: AsyncEngine = create_async_engine(url=database_settings.DATABASE_async_url, echo=False, pool_size=5, max_overflow=10)
 

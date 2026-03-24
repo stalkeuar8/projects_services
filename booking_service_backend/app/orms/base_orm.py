@@ -1,7 +1,7 @@
 from typing import Any, Generic, Sequence, Type, TypeVar, cast
 
 from pydantic import BaseModel
-from sqlalchemy import delete, inspect, select
+from sqlalchemy import delete, inspect, select, ColumnElement
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapper
 
@@ -49,7 +49,7 @@ class BaseOrm(Generic[T]):
     @classmethod
     async def find_all(cls, session: AsyncSession, filters: dict[str, Any]) -> Sequence[T] | None:
 
-        if cls.model is not None:
+        if cls.model:
             mapper: Mapper[Any] = cast(Mapper[Any], inspect(cls.model))
             valid_columns = [column.key for column in mapper.attrs]
 
@@ -72,7 +72,7 @@ class BaseOrm(Generic[T]):
     @classmethod
     async def find_one_or_none(cls, session: AsyncSession, filters: dict[str, Any]) -> T:
 
-        if cls.model is not None:
+        if cls.model:
             mapper: Mapper[Any] = cast(Mapper[Any], inspect(cls.model))
             valid_columns = [column.key for column in mapper.attrs]
 
@@ -92,6 +92,25 @@ class BaseOrm(Generic[T]):
 
         raise ValueError()
 
+
+    @classmethod
+    async def fing_by_id(cls, session: AsyncSession, id_to_find: int) -> T | None:
+
+        if cls.model:
+            
+            query = (
+                select(cls.model)
+                .filter_by(id=id_to_find)
+            )
+
+            result = await session.execute(query)
+            found_obj = result.scalar()
+
+            return found_obj
+
+        raise ValueError()
+
+
     @classmethod
     async def delete_by_id(cls, session: AsyncSession, id_to_delete: int) -> T:
 
@@ -106,3 +125,27 @@ class BaseOrm(Generic[T]):
             return deleted_obj
 
         raise ValueError()
+
+
+    # @classmethod
+    # async def find_one_or_none(cls, session: AsyncSession, *criteria: ColumnElement) -> T:
+
+    #     if cls.model is not None:
+    #         mapper: Mapper[Any] = cast(Mapper[Any], inspect(cls.model))
+    #         valid_columns = [column.key for column in mapper.attrs]
+
+    #         for key in filters:
+    #             if key not in valid_columns:
+    #                 raise ValueError(f"{cls.model} ERROR: param '{key}' does not exists in '{cls.model}' model")
+
+    #         query = select(cls.model).filter_by(**filters)
+
+    #         result = await session.execute(query)
+    #         found_obj = result.scalar_one_or_none()
+
+    #         if not found_obj:
+    #             raise ValueError("Object was not found")
+
+    #         return found_obj
+
+    #     raise ValueError()

@@ -1,6 +1,8 @@
 import asyncio
 import datetime
 
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 
 from app.models.hotel import Rooms
@@ -8,17 +10,35 @@ from app.orms.base_orm import create_tables
 from app.schemas.bookings_schemas import BookingsCheckAvailableSchema
 from app.services.background_processes import BackgroundProcesses
 from app.services.booking_service import BookingService
-from app.settings.database import async_session_factory
-
-# from app.utils.bg_tasks_observer import BackgroundTaskObserver
+from app.settings.database import async_session_factory, async_engine
 from app.utils.paginator import ResultsPaginator
 from app.utils.room_search_filter import RoomSearchFilters
-
+from app.api.rooms_router import rooms_router
+# from app.utils.bg_tasks_observer import BackgroundTaskObserver
 
 
 # START FUNCS, ROUTERS
 
+@asynccontextmanager 
+async def lifespan(app: FastAPI):
+    yield
+    await async_engine.dispose()
 
+
+def create_app() -> FastAPI:
+
+    app = FastAPI(
+        title='Booking Service',
+        lifespan=lifespan
+    ) 
+
+    app.include_router(rooms_router)
+
+    return app
+
+
+
+app = create_app()
 
 # async def main() -> None:
 
