@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.hotel import Rooms
 from app.orms.rooms_orm import RoomsOrm
-from app.schemas.rooms_schemas import RoomsResponseSchema, RoomsListResponse
+from app.schemas.rooms_schemas import RoomsResponseSchema, RoomsListResponse, RoomsCreateSchema
 from app.settings.database import get_db
 from app.utils.room_search_filter import RoomSearchFilters
 
@@ -33,6 +33,7 @@ async def get_room_by_id(room_id: int, session: AsyncSession = Depends(get_db)) 
     if room:
         return {
             **RoomsResponseSchema(
+                id=room.id,
                 hotel_id=room.hotel_id,
                 capacity=room.capacity,
                 price_per_night=room.price_per_night,
@@ -44,3 +45,23 @@ async def get_room_by_id(room_id: int, session: AsyncSession = Depends(get_db)) 
 
 
 @rooms_router.post("/", summary="Create room", response_model=RoomsResponseSchema)
+async def create_room(body: RoomsCreateSchema, session: AsyncSession = Depends(get_db)) -> Rooms:
+    return await RoomsOrm.create(session=session, inserting_data_dto=body)
+
+
+@rooms_router.delete("/{room_id}", summary="Delete room by id", response_model=RoomsResponseSchema)
+async def delete_room_by_id(room_id: int, session: AsyncSession = Depends(get_db)) -> Rooms | None:
+    deleted_room: Rooms | None = await RoomsOrm.delete_by_id(session=session, id_to_delete=room_id)
+
+    if deleted_room:
+        return {
+            **RoomsResponseSchema(
+                id=deleted_room.id,
+                hotel_id=deleted_room.hotel_id,
+                category=deleted_room.category,
+                capacity=deleted_room.capacity,
+                price_per_night=deleted_room.price_per_night
+            ).model_dump()
+        }
+    
+    raise HTTPException(status_code=404, detail=f"Room with id {room_id} was not found")

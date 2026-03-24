@@ -24,6 +24,7 @@ class RoomsSchema(BaseModel):
 
 
 class RoomsResponseSchema(BaseModel):
+    id: int
     hotel_id: int
     category: RoomCategory
     capacity: CapacityValid
@@ -44,3 +45,10 @@ class RoomsListResponse(BaseModel):
             self.total = rooms_length
 
         return self
+    
+
+class RoomsCreateSchema(BaseModel):
+    hotel_id: int
+    category: RoomCategory
+    capacity: CapacityValid
+    price_per_night: PriceValid
