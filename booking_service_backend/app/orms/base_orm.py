@@ -119,9 +119,6 @@ class BaseOrm(Generic[T]):
             result = await session.execute(query)
             deleted_obj = result.scalar_one_or_none()
 
-            if not deleted_obj:
-                raise ValueError(f"{cls.model} ERROR: obj with id '{id_to_delete}' does not exists in '{cls.model}' model")
-
             return deleted_obj
 
         raise ValueError()

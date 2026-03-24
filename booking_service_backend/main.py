@@ -14,6 +14,7 @@ from app.settings.database import async_session_factory, async_engine
 from app.utils.paginator import ResultsPaginator
 from app.utils.room_search_filter import RoomSearchFilters
 from app.api.rooms_router import rooms_router
+from app.api.clients_router import clients_router
 # from app.utils.bg_tasks_observer import BackgroundTaskObserver
 
 
@@ -33,6 +34,7 @@ def create_app() -> FastAPI:
     ) 
 
     app.include_router(rooms_router)
+    app.include_router(clients_router)
 
     return app
 

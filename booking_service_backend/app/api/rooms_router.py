@@ -41,3 +41,6 @@ async def get_room_by_id(room_id: int, session: AsyncSession = Depends(get_db)) 
         }
 
     raise HTTPException(status_code=404, detail=f"Room with id {room_id} was not found")
+
+
+@rooms_router.post("/", summary="Create room", response_model=RoomsResponseSchema)
