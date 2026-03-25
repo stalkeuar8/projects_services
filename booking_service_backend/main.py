@@ -11,7 +11,6 @@ from app.api.hotels_router import hotels_router
 from app.api.bookings_router import bookings_router
 from app.models.hotel import Rooms
 from app.repo.base_repo import create_tables
-from app.schemas.bookings_schemas import BookingsCheckAvailableSchema
 from app.services.background_processes import BackgroundProcesses
 from app.services.booking_service import BookingService
 from app.settings.database import async_engine, async_session_factory
@@ -42,6 +41,12 @@ def create_app() -> FastAPI:
 
 
 app = create_app()
+
+import faker
+from app.repo.clients_repo import ClientsRepo
+fake = faker.Faker()
+
+
 
 # async def main() -> None:
 

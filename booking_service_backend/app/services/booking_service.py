@@ -10,7 +10,7 @@ from app.models.booking import Bookings
 from app.models.hotel import Rooms
 from app.repo.bookings_repo import BookingsRepo
 from app.repo.rooms_repo import RoomsRepo
-from app.schemas.bookings_schemas import BookingsCheckAvailableSchema, BookingsSchema, BookingStatus
+from app.schemas.bookings_schemas import BookingsPreparationSchema, BookingsCreateSchema, BookingStatus
 from app.schemas.rooms_schemas import RoomSearchFilters
 from app.settings.database import async_session_factory
 
@@ -23,7 +23,7 @@ class BookingService:
 
         return rooms
 
-    async def check_available(self, dto: BookingsCheckAvailableSchema, session: AsyncSession) -> bool:
+    async def _check_available(self, dto: BookingsPreparationSchema, session: AsyncSession) -> bool:
         room_id = dto.room_id
         check_in = dto.check_in
         check_out = dto.check_out
@@ -32,12 +32,12 @@ class BookingService:
 
         return room_status
 
-    async def prepare_dto(self, short_dto: BookingsCheckAvailableSchema, session: AsyncSession) -> BookingsSchema:
+    async def _prepare_dto(self, short_dto: BookingsPreparationSchema, session: AsyncSession) -> BookingsCreateSchema:
 
         price_per_night = await RoomsRepo.get_price_per_night(id_to_find=short_dto.room_id, session=session)
         total_days = (short_dto.check_out - short_dto.check_in).days
 
-        dto = BookingsSchema(
+        dto = BookingsCreateSchema(
             room_id=short_dto.room_id,
             client_id=short_dto.client_id,
             check_in=short_dto.check_in,
@@ -48,10 +48,22 @@ class BookingService:
 
         return dto
 
-    async def new_booking(self, dto: BookingsSchema, session: AsyncSession) -> Bookings:
-        new_booking = await BookingsRepo.create(inserting_data_dto=dto, session=session)
+    async def new_booking(self, dto: BookingsPreparationSchema, session: AsyncSession) -> Bookings | None:
+        obj_to_check = BookingsPreparationSchema(room_id=dto.room_id, check_in=dto.check_in, check_out=dto.check_out, client_id=dto.client_id)
 
-        return new_booking
+        availability_result = await self._check_available(dto=obj_to_check, session=session)
+
+        if availability_result:
+
+            new_booking_info = await self._prepare_dto(short_dto=dto, session=session)
+            new_booking = await BookingsRepo.create(inserting_data_dto=new_booking_info, session=session)
+
+            return new_booking
+
+        return None
+
+
+
 
     async def approve_booking(self, booking_id: int) -> bool:
         print("\nApproving....\n")

@@ -13,14 +13,14 @@ class BookingStatus(str, Enum):
     canceled = "canceled"
 
 
-class BookingsCheckAvailableSchema(BaseModel):
+class BookingsPreparationSchema(BaseModel):
     client_id: int
     room_id: int
     check_in: datetime.datetime
     check_out: datetime.datetime
 
 
-class BookingsSchema(BaseModel):
+class BookingsCreateSchema(BaseModel):
     room_id: int
     client_id: int
     created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
@@ -41,3 +41,13 @@ class BookingsSchema(BaseModel):
         if self.check_out < self.check_in + datetime.timedelta(days=1):
             raise ValueError("BookingsSchema ERROR: Value 'check_out' must be later than check in plus 1 day!")
         return self
+
+
+class BookingsResponseSchema(BaseModel):
+    id: int
+    room_id: int
+    client_id: int
+    created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
+    check_in: datetime.datetime
+    check_out: datetime.datetime
+    total_price: int = Field(ge=0)

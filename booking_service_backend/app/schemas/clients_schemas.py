@@ -1,17 +1,18 @@
 from typing import Self
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, model_validator, EmailStr
 
 
 class ClientsCreateSchema(BaseModel):
     full_name: str
     phone_number: str
-
+    email: EmailStr
 
 class ClientsResponseSchema(BaseModel):
     id: int
     full_name: str
     phone_number: str
+    email: EmailStr
 
 
 class ClientsListResponseSchema(BaseModel):

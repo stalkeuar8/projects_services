@@ -13,6 +13,7 @@ class Clients(Base):
     id: Mapped[id_primary_key]
     full_name: Mapped[non_empty_str]
     phone_number: Mapped[non_empty_str] = mapped_column(unique=True)
+    email: Mapped[non_empty_str] = mapped_column(unique=True)
 
     bookings: Mapped[list["Bookings"]] = relationship(back_populates="client")
 

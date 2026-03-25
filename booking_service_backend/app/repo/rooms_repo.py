@@ -13,9 +13,9 @@ class RoomsRepo(BaseRepo[Rooms]):
 
     @staticmethod
     async def get_price_per_night(id_to_find: int, session: AsyncSession) -> int:
-        query = select(Rooms).filter_by(id=id_to_find)
+        query = select(Rooms).where(Rooms.id==id_to_find)
         result = (await session.execute(query)).scalar()
-
+        
         if result:
             price: int = result.price_per_night
             return price
