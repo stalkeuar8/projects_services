@@ -31,13 +31,11 @@ class RoomsResponseSchema(BaseModel):
     price_per_night: PriceValid
 
 
-
 class RoomsListResponse(BaseModel):
-
     rooms: list[RoomsResponseSchema]
     total: int | None
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def calculate_total(self) -> Self:
         rooms_length = len(self.rooms)
 
@@ -45,7 +43,7 @@ class RoomsListResponse(BaseModel):
             self.total = rooms_length
 
         return self
-    
+
 
 class RoomsCreateSchema(BaseModel):
     hotel_id: int

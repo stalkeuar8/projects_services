@@ -1,43 +1,41 @@
 import asyncio
 import datetime
-
 from contextlib import asynccontextmanager
+from typing import Any, AsyncGenerator
 
 from fastapi import FastAPI
 
+from app.api.clients_router import clients_router
+from app.api.rooms_router import rooms_router
 from app.models.hotel import Rooms
 from app.orms.base_orm import create_tables
 from app.schemas.bookings_schemas import BookingsCheckAvailableSchema
 from app.services.background_processes import BackgroundProcesses
 from app.services.booking_service import BookingService
-from app.settings.database import async_session_factory, async_engine
+from app.settings.database import async_engine, async_session_factory
 from app.utils.paginator import ResultsPaginator
 from app.utils.room_search_filter import RoomSearchFilters
-from app.api.rooms_router import rooms_router
-from app.api.clients_router import clients_router
+
 # from app.utils.bg_tasks_observer import BackgroundTaskObserver
 
 
 # START FUNCS, ROUTERS
 
-@asynccontextmanager 
-async def lifespan(app: FastAPI):
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[Any]:
     yield
     await async_engine.dispose()
 
 
 def create_app() -> FastAPI:
 
-    app = FastAPI(
-        title='Booking Service',
-        lifespan=lifespan
-    ) 
+    app = FastAPI(title="Booking Service", lifespan=lifespan)
 
     app.include_router(rooms_router)
     app.include_router(clients_router)
 
     return app
-
 
 
 app = create_app()
@@ -112,7 +110,8 @@ app = create_app()
 
 #             else:
 #                 # example (remove in prod)
-#                 print(f"Sorry, but room {short_dto_obj.room_id} for dates '{short_dto_obj.check_in}'-'{short_dto_obj.check_out}' is not available, check other rooms or change dates!")
+#                 print(f"Sorry, but room {short_dto_obj.room_id} for dates '{short_dto_obj.check_in}'-'{short_dto_obj.check_out}'
+#               is not available, check other rooms or change dates!")
 
 #         if new_booking_id:
 #             task_result = asyncio.create_task(booking_service.approve_booking(booking_id=new_booking_id))
@@ -120,11 +119,13 @@ app = create_app()
 
 #             if approving_result:
 #                 # example (remove in prod)
-#                 print(f"Room '{short_dto_obj.room_id}' successfully booked for dates '{short_dto_obj.check_in}'-'{short_dto_obj.check_out}'")
+#                 print(f"Room '{short_dto_obj.room_id}' successfully booked for dates
+#   '{short_dto_obj.check_in}'-'{short_dto_obj.check_out}'")
 
 #             else:
 #                 # example (remove in prod)1
-#                 print(f"Sorry, but hotel canceled your booking '{new_booking_id}' for room {short_dto_obj.room_id} for dates '{short_dto_obj.check_in}'-'{short_dto_obj.check_out}'")
+#                 print(f"Sorry, but hotel canceled your booking '{new_booking_id}' for room {short_dto_obj.room_id} for
+#       dates '{short_dto_obj.check_in}'-'{short_dto_obj.check_out}'")
 #                 print("Reason: hotel personal service reasons.")
 
 

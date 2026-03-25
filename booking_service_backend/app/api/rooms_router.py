@@ -1,11 +1,11 @@
-from typing import Annotated, Sequence, Any
+from typing import Annotated, Any, Sequence
 
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.hotel import Rooms
 from app.orms.rooms_orm import RoomsOrm
-from app.schemas.rooms_schemas import RoomsResponseSchema, RoomsListResponse, RoomsCreateSchema
+from app.schemas.rooms_schemas import RoomCategory, RoomsCreateSchema, RoomsListResponse, RoomsResponseSchema
 from app.settings.database import get_db
 from app.utils.room_search_filter import RoomSearchFilters
 
@@ -17,51 +17,60 @@ async def get_rooms_by_filters(filters: Annotated[RoomSearchFilters, Query()], s
     rooms: Sequence[Rooms] | None = await RoomsOrm.find_room_by_filters(filters=filters, session=session)
 
     if rooms:
-        return {
-            "rooms" : rooms,
-            "total" : None
-        }
+        return {"rooms": rooms, "total": None}
 
     return {"rooms": [], "total": 0}
 
 
-
 @rooms_router.get("/{room_id}", summary="Get rooms by filters", response_model=RoomsResponseSchema)
-async def get_room_by_id(room_id: int, session: AsyncSession = Depends(get_db)) -> Rooms:
+async def get_room_by_id(room_id: int, session: AsyncSession = Depends(get_db)) -> dict[str, Any] | None:
     room: Rooms | None = await RoomsOrm.fing_by_id(id_to_find=room_id, session=session)
-    
-    if room:
-        return {
-            **RoomsResponseSchema(
-                id=room.id,
-                hotel_id=room.hotel_id,
-                capacity=room.capacity,
-                price_per_night=room.price_per_night,
-                category=room.category
-            ).model_dump()
-        }
 
-    raise HTTPException(status_code=404, detail=f"Room with id {room_id} was not found")
+    if room:
+        response_obj = RoomsResponseSchema(
+            id=room.id,
+            hotel_id=room.hotel_id,
+            capacity=room.capacity,
+            price_per_night=room.price_per_night,
+            category=RoomCategory(room.category),
+        )
+
+        return {**response_obj.model_dump()}
+
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Room with id {room_id} was not found")
 
 
 @rooms_router.post("/", summary="Create room", response_model=RoomsResponseSchema)
-async def create_room(body: RoomsCreateSchema, session: AsyncSession = Depends(get_db)) -> Rooms:
-    return await RoomsOrm.create(session=session, inserting_data_dto=body)
+async def create_room(body: RoomsCreateSchema, session: AsyncSession = Depends(get_db)) -> dict[str, Any] | None:
+    new_room: Rooms | None = await RoomsOrm.create(session=session, inserting_data_dto=body)
+
+    if new_room:
+        response_obj = RoomsResponseSchema(
+            id=new_room.id,
+            hotel_id=new_room.hotel_id,
+            capacity=new_room.capacity,
+            price_per_night=new_room.price_per_night,
+            category=RoomCategory(new_room.category),
+        )
+
+        return {**response_obj.model_dump()}
+
+    raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Client not created, Back-end error.")
 
 
 @rooms_router.delete("/{room_id}", summary="Delete room by id", response_model=RoomsResponseSchema)
-async def delete_room_by_id(room_id: int, session: AsyncSession = Depends(get_db)) -> Rooms | None:
+async def delete_room_by_id(room_id: int, session: AsyncSession = Depends(get_db)) -> dict[str, Any] | None:
     deleted_room: Rooms | None = await RoomsOrm.delete_by_id(session=session, id_to_delete=room_id)
 
     if deleted_room:
-        return {
-            **RoomsResponseSchema(
-                id=deleted_room.id,
-                hotel_id=deleted_room.hotel_id,
-                category=deleted_room.category,
-                capacity=deleted_room.capacity,
-                price_per_night=deleted_room.price_per_night
-            ).model_dump()
-        }
-    
-    raise HTTPException(status_code=404, detail=f"Room with id {room_id} was not found")
+        response_obj = RoomsResponseSchema(
+            id=deleted_room.id,
+            hotel_id=deleted_room.hotel_id,
+            capacity=deleted_room.capacity,
+            price_per_night=deleted_room.price_per_night,
+            category=RoomCategory(deleted_room.category),
+        )
+
+        return {**response_obj.model_dump()}
+
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Room with id {room_id} was not found")

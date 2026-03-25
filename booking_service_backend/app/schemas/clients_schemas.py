@@ -1,10 +1,12 @@
+from typing import Self
+
 from pydantic import BaseModel, model_validator
 
-from typing import Self
 
 class ClientsCreateSchema(BaseModel):
     full_name: str
     phone_number: str
+
 
 class ClientsResponseSchema(BaseModel):
     id: int
@@ -16,7 +18,7 @@ class ClientsListResponseSchema(BaseModel):
     clients: list[ClientsResponseSchema]
     total: int | None = None
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def calculate_total(self) -> Self:
         clients_length = len(self.clients)
 

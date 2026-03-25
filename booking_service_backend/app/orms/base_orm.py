@@ -1,7 +1,7 @@
 from typing import Any, Generic, Sequence, Type, TypeVar, cast
 
 from pydantic import BaseModel
-from sqlalchemy import delete, inspect, select, ColumnElement
+from sqlalchemy import ColumnElement, delete, inspect, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapper
 
@@ -92,16 +92,11 @@ class BaseOrm(Generic[T]):
 
         raise ValueError()
 
-
     @classmethod
     async def fing_by_id(cls, session: AsyncSession, id_to_find: int) -> T | None:
 
         if cls.model:
-            
-            query = (
-                select(cls.model)
-                .filter_by(id=id_to_find)
-            )
+            query = select(cls.model).filter_by(id=id_to_find)
 
             result = await session.execute(query)
             found_obj = result.scalar()
@@ -110,9 +105,8 @@ class BaseOrm(Generic[T]):
 
         raise ValueError()
 
-
     @classmethod
-    async def delete_by_id(cls, session: AsyncSession, id_to_delete: int) -> T:
+    async def delete_by_id(cls, session: AsyncSession, id_to_delete: int) -> T | None:
 
         if cls.model:
             query = delete(cls.model).filter_by(id=id_to_delete).returning(cls.model)
@@ -122,7 +116,6 @@ class BaseOrm(Generic[T]):
             return deleted_obj
 
         raise ValueError()
-
 
     # @classmethod
     # async def find_one_or_none(cls, session: AsyncSession, *criteria: ColumnElement) -> T:
