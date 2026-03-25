@@ -17,7 +17,7 @@ async def create_tables() -> None:
 T = TypeVar("T")
 
 
-class BaseOrm(Generic[T]):
+class BaseRepo(Generic[T]):
     model: Type[T] | None = None
 
     @classmethod
@@ -46,51 +46,6 @@ class BaseOrm(Generic[T]):
 
         raise ValueError()
 
-    @classmethod
-    async def find_all(cls, session: AsyncSession, filters: dict[str, Any]) -> Sequence[T] | None:
-
-        if cls.model:
-            mapper: Mapper[Any] = cast(Mapper[Any], inspect(cls.model))
-            valid_columns = [column.key for column in mapper.attrs]
-
-            for key in filters:
-                if key not in valid_columns:
-                    raise ValueError(f"{cls.model} ERROR: param '{key}' does not exists in '{cls.model}' model")
-
-            query = select(cls.model).filter_by(**filters)
-
-            results = await session.execute(query)
-            found_objs = results.scalars().all()
-
-            if not found_objs:
-                return None
-
-            return found_objs
-
-        raise ValueError()
-
-    @classmethod
-    async def find_one_or_none(cls, session: AsyncSession, filters: dict[str, Any]) -> T:
-
-        if cls.model:
-            mapper: Mapper[Any] = cast(Mapper[Any], inspect(cls.model))
-            valid_columns = [column.key for column in mapper.attrs]
-
-            for key in filters:
-                if key not in valid_columns:
-                    raise ValueError(f"{cls.model} ERROR: param '{key}' does not exists in '{cls.model}' model")
-
-            query = select(cls.model).filter_by(**filters)
-
-            result = await session.execute(query)
-            found_obj = result.scalar_one_or_none()
-
-            if not found_obj:
-                raise ValueError("Object was not found")
-
-            return found_obj
-
-        raise ValueError()
 
     @classmethod
     async def fing_by_id(cls, session: AsyncSession, id_to_find: int) -> T | None:
@@ -117,10 +72,36 @@ class BaseOrm(Generic[T]):
 
         raise ValueError()
 
-    # @classmethod
-    # async def find_one_or_none(cls, session: AsyncSession, *criteria: ColumnElement) -> T:
 
-    #     if cls.model is not None:
+
+    
+    # @classmethod
+    # async def find_all(cls, session: AsyncSession, filters: dict[str, Any]) -> Sequence[T] | None:
+
+    #     if cls.model:
+    #         mapper: Mapper[Any] = cast(Mapper[Any], inspect(cls.model))
+    #         valid_columns = [column.key for column in mapper.attrs]
+
+    #         for key in filters:
+    #             if key not in valid_columns:
+    #                 raise ValueError(f"{cls.model} ERROR: param '{key}' does not exists in '{cls.model}' model")
+
+    #         query = select(cls.model).filter_by(**filters)
+
+    #         results = await session.execute(query)
+    #         found_objs = results.scalars().all()
+
+    #         if not found_objs:
+    #             return None
+
+    #         return found_objs
+
+    #     raise ValueError()
+
+    # @classmethod
+    # async def find_one_or_none(cls, session: AsyncSession, filters: dict[str, Any]) -> T:
+
+    #     if cls.model:
     #         mapper: Mapper[Any] = cast(Mapper[Any], inspect(cls.model))
     #         valid_columns = [column.key for column in mapper.attrs]
 

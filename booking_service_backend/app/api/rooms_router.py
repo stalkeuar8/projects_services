@@ -4,17 +4,16 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.hotel import Rooms
-from app.orms.rooms_orm import RoomsOrm
-from app.schemas.rooms_schemas import RoomCategory, RoomsCreateSchema, RoomsListResponse, RoomsResponseSchema
+from app.repo.rooms_repo import RoomsRepo
+from app.schemas.rooms_schemas import RoomCategory, RoomsCreateSchema, RoomsListResponse, RoomsResponseSchema, RoomSearchFilters
 from app.settings.database import get_db
-from app.utils.room_search_filter import RoomSearchFilters
 
 rooms_router = APIRouter(prefix="/rooms", tags=["Rooms"])
 
 
 @rooms_router.get("/", summary="Get rooms by filters", response_model=RoomsListResponse)
-async def get_rooms_by_filters(filters: Annotated[RoomSearchFilters, Query()], session: AsyncSession = Depends(get_db)) -> dict[str, Any]:
-    rooms: Sequence[Rooms] | None = await RoomsOrm.find_room_by_filters(filters=filters, session=session)
+async def get_rooms_by_filters(body: Annotated[RoomSearchFilters, Query()], session: AsyncSession = Depends(get_db)) -> dict[str, Any]:
+    rooms: Sequence[Rooms] | None = await RoomsRepo.find_room_by_filters(filters=body, session=session)
 
     if rooms:
         return {"rooms": rooms, "total": None}
@@ -24,7 +23,7 @@ async def get_rooms_by_filters(filters: Annotated[RoomSearchFilters, Query()], s
 
 @rooms_router.get("/{room_id}", summary="Get rooms by filters", response_model=RoomsResponseSchema)
 async def get_room_by_id(room_id: int, session: AsyncSession = Depends(get_db)) -> dict[str, Any] | None:
-    room: Rooms | None = await RoomsOrm.fing_by_id(id_to_find=room_id, session=session)
+    room: Rooms | None = await RoomsRepo.fing_by_id(id_to_find=room_id, session=session)
 
     if room:
         response_obj = RoomsResponseSchema(
@@ -42,7 +41,7 @@ async def get_room_by_id(room_id: int, session: AsyncSession = Depends(get_db)) 
 
 @rooms_router.post("/", summary="Create room", response_model=RoomsResponseSchema)
 async def create_room(body: RoomsCreateSchema, session: AsyncSession = Depends(get_db)) -> dict[str, Any] | None:
-    new_room: Rooms | None = await RoomsOrm.create(session=session, inserting_data_dto=body)
+    new_room: Rooms | None = await RoomsRepo.create(session=session, inserting_data_dto=body)
 
     if new_room:
         response_obj = RoomsResponseSchema(
@@ -60,7 +59,7 @@ async def create_room(body: RoomsCreateSchema, session: AsyncSession = Depends(g
 
 @rooms_router.delete("/{room_id}", summary="Delete room by id", response_model=RoomsResponseSchema)
 async def delete_room_by_id(room_id: int, session: AsyncSession = Depends(get_db)) -> dict[str, Any] | None:
-    deleted_room: Rooms | None = await RoomsOrm.delete_by_id(session=session, id_to_delete=room_id)
+    deleted_room: Rooms | None = await RoomsRepo.delete_by_id(session=session, id_to_delete=room_id)
 
     if deleted_room:
         response_obj = RoomsResponseSchema(

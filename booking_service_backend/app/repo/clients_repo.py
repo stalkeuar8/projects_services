@@ -2,10 +2,11 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.booking import Clients
-from app.orms.base_orm import BaseOrm
+from app.repo.base_repo import BaseRepo
 
 
-class ClientsOrm(BaseOrm[Clients]):
+
+class ClientsRepo(BaseRepo[Clients]):
     model = Clients
 
     @staticmethod

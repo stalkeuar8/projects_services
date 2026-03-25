@@ -5,11 +5,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import contains_eager
 
 from app.models.hotel import Hotels, Rooms
-from app.orms.base_orm import BaseOrm
-from app.utils.room_search_filter import RoomSearchFilters
+from app.repo.base_repo import BaseRepo
+from app.schemas.rooms_schemas import RoomSearchFilters
 
-
-class RoomsOrm(BaseOrm[Rooms]):
+class RoomsRepo(BaseRepo[Rooms]):
     model = Rooms
 
     @staticmethod

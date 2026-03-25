@@ -6,10 +6,10 @@ from sqlalchemy.orm import contains_eager
 
 from app.models.booking import Bookings
 from app.models.hotel import Rooms
-from app.orms.base_orm import BaseOrm
+from app.repo.base_repo import BaseRepo
 
 
-class BookingsOrm(BaseOrm[Bookings]):
+class BookingsRepo(BaseRepo[Bookings]):
     model = Bookings
 
     @staticmethod
