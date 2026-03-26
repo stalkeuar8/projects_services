@@ -32,7 +32,7 @@ class RoomsResponseSchema(BaseModel):
     price_per_night: PriceValid
 
 
-class RoomsListResponse(BaseModel):
+class RoomsListResponseSchema(BaseModel):
     rooms: list[RoomsResponseSchema]
     total: int | None
 

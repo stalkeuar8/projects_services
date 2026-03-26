@@ -10,7 +10,7 @@ from app.models.booking import Bookings
 from app.models.hotel import Rooms
 from app.repo.bookings_repo import BookingsRepo
 from app.repo.rooms_repo import RoomsRepo
-from app.schemas.bookings_schemas import BookingsCreateSchema, BookingsPreparationSchema, BookingStatus
+from app.schemas.bookings_schemas import BookingsCreateSchema, BookingsPreparationSchema, BookingStatus, BookingAvailabilityRequestSchema
 from app.schemas.rooms_schemas import RoomSearchFilters
 from app.settings.database import async_session_factory
 
@@ -23,7 +23,7 @@ class BookingService:
 
         return rooms
 
-    async def _check_available(self, dto: BookingsPreparationSchema, session: AsyncSession) -> bool:
+    async def check_available(self, dto: BookingAvailabilityRequestSchema, session: AsyncSession) -> bool:
         room_id = dto.room_id
         check_in = dto.check_in
         check_out = dto.check_out
@@ -51,7 +51,7 @@ class BookingService:
     async def new_booking(self, dto: BookingsPreparationSchema, session: AsyncSession) -> Bookings | None:
         obj_to_check = BookingsPreparationSchema(room_id=dto.room_id, check_in=dto.check_in, check_out=dto.check_out, client_id=dto.client_id)
 
-        availability_result = await self._check_available(dto=obj_to_check, session=session)
+        availability_result = await self.check_available(dto=obj_to_check, session=session)
 
         if availability_result:
             new_booking_info = await self._prepare_dto(short_dto=dto, session=session)

@@ -13,21 +13,10 @@ class BookingStatus(str, Enum):
     canceled = "canceled"
 
 
-class BookingsPreparationSchema(BaseModel):
-    client_id: int
+class BookingsBaseSchema(BaseModel):
     room_id: int
     check_in: datetime.datetime
     check_out: datetime.datetime
-
-
-class BookingsCreateSchema(BaseModel):
-    room_id: int
-    client_id: int
-    created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
-    check_in: datetime.datetime
-    check_out: datetime.datetime
-    total_price: int = Field(ge=0)
-    status: BookingStatus
 
     @field_validator("check_in")
     @classmethod
@@ -43,11 +32,27 @@ class BookingsCreateSchema(BaseModel):
         return self
 
 
-class BookingsResponseSchema(BaseModel):
-    id: int
-    room_id: int
+class BookingsPreparationSchema(BookingsBaseSchema):
+    client_id: int
+
+
+class BookingsCreateSchema(BookingsBaseSchema):
     client_id: int
     created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
-    check_in: datetime.datetime
-    check_out: datetime.datetime
     total_price: int = Field(ge=0)
+    status: BookingStatus
+
+
+class BookingsResponseSchema(BookingsBaseSchema):
+    id: int
+    client_id: int
+    created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
+    total_price: int = Field(ge=0)
+
+
+class BookingAvailabilityResponseSchema(BookingsBaseSchema):
+    is_available: bool
+
+
+class BookingAvailabilityRequestSchema(BookingsBaseSchema):
+    pass
