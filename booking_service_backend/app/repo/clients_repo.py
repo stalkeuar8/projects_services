@@ -5,7 +5,6 @@ from app.models.booking import Clients
 from app.repo.base_repo import BaseRepo
 
 
-
 class ClientsRepo(BaseRepo[Clients]):
     model = Clients
 

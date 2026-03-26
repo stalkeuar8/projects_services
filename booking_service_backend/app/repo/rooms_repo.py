@@ -8,14 +8,15 @@ from app.models.hotel import Hotels, Rooms
 from app.repo.base_repo import BaseRepo
 from app.schemas.rooms_schemas import RoomSearchFilters
 
+
 class RoomsRepo(BaseRepo[Rooms]):
     model = Rooms
 
     @staticmethod
     async def get_price_per_night(id_to_find: int, session: AsyncSession) -> int:
-        query = select(Rooms).where(Rooms.id==id_to_find)
+        query = select(Rooms).where(Rooms.id == id_to_find)
         result = (await session.execute(query)).scalar()
-        
+
         if result:
             price: int = result.price_per_night
             return price

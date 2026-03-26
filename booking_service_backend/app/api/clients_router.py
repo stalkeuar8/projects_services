@@ -28,7 +28,9 @@ async def create_client(body: ClientsCreateSchema, session: AsyncSession = Depen
     new_client: Clients | None = await ClientsRepo.create(session=session, inserting_data_dto=body)
 
     if new_client:
-        response_obj = ClientsResponseSchema(id=new_client.id, full_name=new_client.full_name, phone_number=new_client.phone_number, email=new_client.email)
+        response_obj = ClientsResponseSchema(
+            id=new_client.id, full_name=new_client.full_name, phone_number=new_client.phone_number, email=new_client.email
+        )
 
         return {**response_obj.model_dump()}
 
@@ -40,11 +42,10 @@ async def delete_client(client_id: int, session: AsyncSession = Depends(get_db))
     deleted_client: Clients | None = await ClientsRepo.delete_by_id(id_to_delete=client_id, session=session)
 
     if deleted_client:
-        response_obj = ClientsResponseSchema(id=deleted_client.id, full_name=deleted_client.full_name, phone_number=deleted_client.phone_number, email=deleted_client.email)
+        response_obj = ClientsResponseSchema(
+            id=deleted_client.id, full_name=deleted_client.full_name, phone_number=deleted_client.phone_number, email=deleted_client.email
+        )
 
         return {**response_obj.model_dump()}
 
     raise HTTPException(status_code=404, detail=f"Client with id {client_id} was not found")
-
-
-

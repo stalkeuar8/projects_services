@@ -10,7 +10,7 @@ from app.models.booking import Bookings
 from app.models.hotel import Rooms
 from app.repo.bookings_repo import BookingsRepo
 from app.repo.rooms_repo import RoomsRepo
-from app.schemas.bookings_schemas import BookingsPreparationSchema, BookingsCreateSchema, BookingStatus
+from app.schemas.bookings_schemas import BookingsCreateSchema, BookingsPreparationSchema, BookingStatus
 from app.schemas.rooms_schemas import RoomSearchFilters
 from app.settings.database import async_session_factory
 
@@ -54,16 +54,12 @@ class BookingService:
         availability_result = await self._check_available(dto=obj_to_check, session=session)
 
         if availability_result:
-
             new_booking_info = await self._prepare_dto(short_dto=dto, session=session)
             new_booking = await BookingsRepo.create(inserting_data_dto=new_booking_info, session=session)
 
             return new_booking
 
         return None
-
-
-
 
     async def approve_booking(self, booking_id: int) -> bool:
         print("\nApproving....\n")

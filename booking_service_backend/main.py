@@ -5,10 +5,10 @@ from typing import Any, AsyncGenerator
 
 from fastapi import FastAPI
 
-from app.api.clients_router import clients_router
-from app.api.rooms_router import rooms_router
-from app.api.hotels_router import hotels_router
 from app.api.bookings_router import bookings_router
+from app.api.clients_router import clients_router
+from app.api.hotels_router import hotels_router
+from app.api.rooms_router import rooms_router
 from app.models.hotel import Rooms
 from app.repo.base_repo import create_tables
 from app.services.background_processes import BackgroundProcesses
@@ -41,11 +41,6 @@ def create_app() -> FastAPI:
 
 
 app = create_app()
-
-import faker
-from app.repo.clients_repo import ClientsRepo
-fake = faker.Faker()
-
 
 
 # async def main() -> None:

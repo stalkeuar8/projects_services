@@ -46,7 +46,6 @@ class BaseRepo(Generic[T]):
 
         raise ValueError()
 
-
     @classmethod
     async def fing_by_id(cls, session: AsyncSession, id_to_find: int) -> T | None:
 
@@ -72,9 +71,6 @@ class BaseRepo(Generic[T]):
 
         raise ValueError()
 
-
-
-    
     # @classmethod
     # async def find_all(cls, session: AsyncSession, filters: dict[str, Any]) -> Sequence[T] | None:
 

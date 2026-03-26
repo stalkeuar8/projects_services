@@ -6,7 +6,6 @@ from pydantic import BaseModel, Field, model_validator
 from app.models.hotel import Rooms
 from app.schemas.hotels_schemas import RatingValid
 
-
 CapacityValid = Annotated[int, Field(ge=1, le=3)]
 PriceValid = Annotated[int, Field(ge=0)]
 
@@ -52,7 +51,6 @@ class RoomsCreateSchema(BaseModel):
     category: RoomCategory
     capacity: CapacityValid
     price_per_night: PriceValid
-
 
 
 class RoomSearchFilters(BaseModel):

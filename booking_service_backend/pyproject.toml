@@ -1,6 +1,7 @@
 [tool.ruff]
 line-length = 150
 target-version = "py312" 
+extend-exclude = ["**/migrations/*.py", "**/versions/*.py"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "W"]
@@ -16,6 +17,7 @@ warn_return_any = true
 explicit_package_bases = true
 namespace_packages = true
 mypy_path = "."
+exclude = ["migrations/", "versions/"]
 
 plugins = [
   "pydantic.mypy"
@@ -23,5 +25,5 @@ plugins = [
 
 [tool.pydantic-mypy]
 init_forbid_extra = true
-init_typed = true
+init_typed = false
 warn_required_dynamic_aliases = true

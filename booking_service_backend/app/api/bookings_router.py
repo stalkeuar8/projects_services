@@ -1,17 +1,18 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-
-from app.schemas.bookings_schemas import BookingsPreparationSchema, BookingsCreateSchema, BookingsResponseSchema, BookingStatus
-from app.models.booking import Bookings
-from app.repo.bookings_repo import BookingsRepo
-from app.settings.database import get_db
-from app.services.booking_service import BookingService
 from typing import Any
 
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.booking import Bookings
+from app.repo.bookings_repo import BookingsRepo
+from app.schemas.bookings_schemas import BookingsCreateSchema, BookingsPreparationSchema, BookingsResponseSchema, BookingStatus
+from app.services.booking_service import BookingService
+from app.settings.database import get_db
 
 booking_service = BookingService()
 
-bookings_router = APIRouter(prefix="/bookings", tags=['Bookings'])
+bookings_router = APIRouter(prefix="/bookings", tags=["Bookings"])
+
 
 @bookings_router.post("/", summary="Create booking", response_model=BookingsResponseSchema)
 async def create_booking(body: BookingsPreparationSchema, session: AsyncSession = Depends(get_db)) -> dict[str, Any] | None:
@@ -25,9 +26,9 @@ async def create_booking(body: BookingsPreparationSchema, session: AsyncSession 
             created_at=new_booking.created_at,
             check_in=new_booking.check_in,
             check_out=new_booking.check_out,
-            total_price=new_booking.total_price
+            total_price=new_booking.total_price,
         )
 
         return {**response_obj.model_dump()}
-    
+
     raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Room is not available for dates {body.check_in}-{body.check_out}")

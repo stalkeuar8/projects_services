@@ -1,20 +1,19 @@
-from typing import Any, Annotated
+from typing import Annotated, Any, Sequence
 
-from fastapi import APIRouter, Depends, Query, status, HTTPException
-
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.settings.database import get_db
 from app.models.hotel import Hotels
 from app.repo.hotels_repo import HotelsRepo
-from app.schemas.hotels_schemas import HotelSearchFilters, HotelsResponseSchema, HotelsCreateSchema, HotelsListResponseSchema
+from app.schemas.hotels_schemas import HotelsCreateSchema, HotelSearchFilters, HotelsListResponseSchema, HotelsResponseSchema
+from app.settings.database import get_db
 
-hotels_router = APIRouter(prefix="/hotels", tags=['Hotels'])
+hotels_router = APIRouter(prefix="/hotels", tags=["Hotels"])
 
 
 @hotels_router.get("/", summary="Get hotels by filters", response_model=HotelsListResponseSchema)
 async def get_hotels_by_filters(body: Annotated[HotelSearchFilters, Query()], session: AsyncSession = Depends(get_db)) -> dict[str, Any] | None:
-    hotels: list[Hotels] | None = await HotelsRepo.find_hotel_by_filters(filters=body, session=session)
+    hotels: Sequence[Hotels] | None = await HotelsRepo.find_hotel_by_filters(filters=body, session=session)
 
     if hotels:
         return {"hotels": hotels, "total": None}
@@ -22,24 +21,16 @@ async def get_hotels_by_filters(body: Annotated[HotelSearchFilters, Query()], se
     return {"hotels": [], "total": 0}
 
 
-@hotels_router.get("/{hotel_id}", summary="Get hotel by id", response_model=HotelsResponseSchema) 
+@hotels_router.get("/{hotel_id}", summary="Get hotel by id", response_model=HotelsResponseSchema)
 async def get_hotel_by_id(hotel_id: int, session: AsyncSession = Depends(get_db)) -> dict[str, Any] | None:
     hotel: Hotels | None = await HotelsRepo.fing_by_id(id_to_find=hotel_id, session=session)
 
     if hotel:
-
-        response_obj = HotelsResponseSchema(
-            id=hotel.id,
-            name=hotel.name,
-            country=hotel.country,
-            city=hotel.city,
-            rating=hotel.rating
-        )
+        response_obj = HotelsResponseSchema(id=hotel.id, name=hotel.name, country=hotel.country, city=hotel.city, rating=hotel.rating)
 
         return {**response_obj.model_dump()}
-    
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Hotel with id {hotel_id} was not found")
 
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Hotel with id {hotel_id} was not found")
 
 
 @hotels_router.post("/", summary="Create hotel", response_model=HotelsResponseSchema)
@@ -48,11 +39,7 @@ async def create_hotel(body: HotelsCreateSchema, session: AsyncSession = Depends
 
     if new_hotel:
         response_obj = HotelsResponseSchema(
-            id=new_hotel.id,
-            name=new_hotel.name,
-            country=new_hotel.country,
-            city=new_hotel.city,
-            rating=new_hotel.rating
+            id=new_hotel.id, name=new_hotel.name, country=new_hotel.country, city=new_hotel.city, rating=new_hotel.rating
         )
 
         return {**response_obj.model_dump()}
@@ -66,11 +53,7 @@ async def delete_hotel_by_id(room_id: int, session: AsyncSession = Depends(get_d
 
     if deleted_hotel:
         response_obj = HotelsResponseSchema(
-            id=deleted_hotel.id,
-            name=deleted_hotel.name,
-            country=deleted_hotel.country,
-            city=deleted_hotel.city,
-            rating=deleted_hotel.rating
+            id=deleted_hotel.id, name=deleted_hotel.name, country=deleted_hotel.country, city=deleted_hotel.city, rating=deleted_hotel.rating
         )
 
         return {**response_obj.model_dump()}

@@ -1,12 +1,13 @@
 from typing import Self
 
-from pydantic import BaseModel, model_validator, EmailStr
+from pydantic import BaseModel, EmailStr, model_validator
 
 
 class ClientsCreateSchema(BaseModel):
     full_name: str
     phone_number: str
     email: EmailStr
+
 
 class ClientsResponseSchema(BaseModel):
     id: int
