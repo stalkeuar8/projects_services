@@ -21,12 +21,9 @@ async def create_booking(body: BookingsPreparationSchema, session: AsyncSession 
 
     if new_booking:
         return BookingsResponseSchema(
+            **body.model_dump(),
             id=new_booking.id,
-            room_id=new_booking.room_id,
-            client_id=new_booking.client_id,
             created_at=new_booking.created_at,
-            check_in=new_booking.check_in,
-            check_out=new_booking.check_out,
             total_price=new_booking.total_price,
         )
 
@@ -36,7 +33,7 @@ async def create_booking(body: BookingsPreparationSchema, session: AsyncSession 
 
 @bookings_router.get("/{booking_id}", summary="Get booking by id", response_model=BookingsResponseSchema)
 async def get_booking_by_id(booking_id: int, session: AsyncSession = Depends(get_db)) -> BookingsResponseSchema | None:
-    booking: Bookings | None = await BookingsRepo.fing_by_id(session=session, id_to_find=booking_id)
+    booking: Bookings | None = await BookingsRepo.find_by_id(session=session, id_to_find=booking_id)
 
     if booking:
         return BookingsResponseSchema(
@@ -52,8 +49,8 @@ async def get_booking_by_id(booking_id: int, session: AsyncSession = Depends(get
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Booking with id {booking_id} was not found")
 
 
-
-@bookings_router.get("/available", summary="Check room availability", response_model=BookingAvailabilityResponseSchema)
+# THINK ABOUT!!!
+@bookings_router.get("/{room_id}/available", summary="Check room availability", response_model=BookingAvailabilityResponseSchema)
 async def check_room_availablity(params: Annotated[BookingAvailabilityRequestSchema, Query()], session: AsyncSession = Depends(get_db)) -> BookingAvailabilityResponseSchema | None:    
     availability_result: bool | None = await booking_service.check_available(session=session, dto=params)
 

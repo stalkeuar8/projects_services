@@ -47,7 +47,7 @@ class BaseRepo(Generic[T]):
         raise ValueError()
 
     @classmethod
-    async def fing_by_id(cls, session: AsyncSession, id_to_find: int) -> T | None:
+    async def find_by_id(cls, session: AsyncSession, id_to_find: int) -> T | None:
 
         if cls.model:
             query = select(cls.model).filter_by(id=id_to_find)

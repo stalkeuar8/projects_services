@@ -16,12 +16,18 @@ from app.settings.database import async_session_factory
 
 
 class BookingService:
+
     async def search_matching_rooms(self, filters: RoomSearchFilters, session: AsyncSession) -> Sequence[Rooms]:
         print(f"Finding matching rooms by filters: {filters.model_dump(exclude_none=True)}")
 
+        if (filters.check_out and not filters.check_in) or (filters.check_in and not filters.check_out):
+            raise ValueError
+        
         rooms = await RoomsRepo.find_room_by_filters(filters=filters, session=session)
 
         return rooms
+
+
 
     async def check_available(self, dto: BookingAvailabilityRequestSchema, session: AsyncSession) -> bool:
         room_id = dto.room_id
@@ -31,6 +37,9 @@ class BookingService:
         room_status: bool = await BookingsRepo.check_is_available(room_id=room_id, check_in=check_in, check_out=check_out, session=session)
 
         return room_status
+
+
+
 
     async def _prepare_dto(self, short_dto: BookingsPreparationSchema, session: AsyncSession) -> BookingsCreateSchema:
 

@@ -23,7 +23,7 @@ async def get_hotels_by_filters(body: Annotated[HotelSearchFilters, Query()], se
 
 @hotels_router.get("/{hotel_id}", summary="Get hotel by id", response_model=HotelsResponseSchema)
 async def get_hotel_by_id(hotel_id: int, session: AsyncSession = Depends(get_db)) -> HotelsResponseSchema | None:
-    hotel: Hotels | None = await HotelsRepo.fing_by_id(id_to_find=hotel_id, session=session)
+    hotel: Hotels | None = await HotelsRepo.find_by_id(id_to_find=hotel_id, session=session)
 
     if hotel:
         return HotelsResponseSchema(id=hotel.id, name=hotel.name, country=hotel.country, city=hotel.city, rating=hotel.rating)

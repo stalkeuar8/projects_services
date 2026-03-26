@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import contains_eager
 
 from app.models.hotel import Hotels, Rooms
+from app.models.booking import Bookings
 from app.repo.base_repo import BaseRepo
 from app.schemas.rooms_schemas import RoomSearchFilters
 
@@ -28,6 +29,18 @@ class RoomsRepo(BaseRepo[Rooms]):
 
         query = select(Rooms).join(Rooms.hotel)
 
+        if filters.check_in and filters.check_out:
+            subquery = (
+                select(Bookings.room_id)
+                .where(
+                    Bookings.status != "canceled",
+                    Bookings.check_in < filters.check_out,
+                    Bookings.check_out > filters.check_in,
+                )
+            )
+
+            query = query.where(Rooms.id.not_in(subquery))
+
         if filters.country:
             query = query.where(Hotels.country == filters.country)
 
@@ -35,25 +48,25 @@ class RoomsRepo(BaseRepo[Rooms]):
             query = query.where(Hotels.city == filters.city)
 
         if filters.min_rating:
-            query = query.where((Hotels.rating > filters.min_rating) | (Hotels.rating == filters.min_rating))
+            query = query.where(Hotels.rating >= filters.min_rating)
 
         if filters.max_rating:
-            query = query.where((Hotels.rating < filters.max_rating) | (Hotels.rating == filters.max_rating))
+            query = query.where(Hotels.rating <= filters.max_rating)
 
         if filters.category:
             query = query.where(Rooms.category == filters.category)
 
         if filters.min_capacity:
-            query = query.where((Rooms.capacity > filters.min_capacity) | (Rooms.capacity == filters.min_capacity))
+            query = query.where(Rooms.capacity >= filters.min_capacity)
 
         if filters.max_capacity:
-            query = query.where((Rooms.capacity < filters.max_capacity) | (Rooms.capacity == filters.max_capacity))
+            query = query.where(Rooms.capacity <= filters.max_capacity)
 
         if filters.min_price:
-            query = query.where((Rooms.price_per_night > filters.min_price) | (Rooms.price_per_night == filters.min_price))
+            query = query.where(Rooms.price_per_night >= filters.min_price)
 
         if filters.max_price:
-            query = query.where((Rooms.price_per_night < filters.max_price) | (Rooms.price_per_night == filters.max_price))
+            query = query.where(Rooms.price_per_night <= filters.max_price)
 
         query = query.options(contains_eager(Rooms.hotel))
 
@@ -61,3 +74,28 @@ class RoomsRepo(BaseRepo[Rooms]):
         rooms = results.scalars().all()
 
         return rooms
+
+
+
+
+
+# if filters.min_rating:
+#     query = query.where((Hotels.rating > filters.min_rating) | (Hotels.rating == filters.min_rating))
+
+# if filters.max_rating:
+#     query = query.where((Hotels.rating < filters.max_rating) | (Hotels.rating == filters.max_rating))
+
+# if filters.category:
+#     query = query.where(Rooms.category == filters.category)
+
+# if filters.min_capacity:
+#     query = query.where((Rooms.capacity > filters.min_capacity) | (Rooms.capacity == filters.min_capacity))
+
+# if filters.max_capacity:
+#     query = query.where((Rooms.capacity < filters.max_capacity) | (Rooms.capacity == filters.max_capacity))
+
+# if filters.min_price:
+#     query = query.where((Rooms.price_per_night > filters.min_price) | (Rooms.price_per_night == filters.min_price))
+
+# if filters.max_price:
+#     query = query.where((Rooms.price_per_night < filters.max_price) | (Rooms.price_per_night == filters.max_price))

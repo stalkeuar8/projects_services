@@ -1,10 +1,12 @@
 from enum import Enum
 from typing import Annotated, Self
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, model_validator, field_validator, ConfigDict
 
 from app.models.hotel import Rooms
 from app.schemas.hotels_schemas import RatingValid
+
+from datetime import datetime, timedelta, timezone
 
 CapacityValid = Annotated[int, Field(ge=1, le=3)]
 PriceValid = Annotated[int, Field(ge=0)]
@@ -30,6 +32,8 @@ class RoomsResponseSchema(BaseModel):
     category: RoomCategory
     capacity: CapacityValid
     price_per_night: PriceValid
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class RoomsListResponseSchema(BaseModel):
@@ -69,6 +73,17 @@ class RoomSearchFilters(BaseModel):
     min_price: PriceValid | None = None
     max_price: PriceValid | None = None
 
+    check_in: datetime | None = None
+    check_out: datetime | None = None
+
+
+    @field_validator("check_in")
+    def validate_date(cls, date: datetime) -> datetime:
+        if date <= datetime.now(tz=timezone.utc):
+            raise ValueError("RoomSearchFilters ERROR: Value 'check_in' must be later than now!")
+        return date
+
+
     @model_validator(mode="after")
     def validate_check_out(self) -> Self:
         if self.min_rating and self.max_rating and self.min_rating >= self.max_rating:
@@ -80,4 +95,9 @@ class RoomSearchFilters(BaseModel):
         if self.min_price and self.max_price and self.min_price >= self.max_price:
             raise ValueError("RoomSearchFilters ERROR: Value 'min_price' must be less than 'max_price'!")
 
+        if self.check_out < self.check_in + timedelta(days=1):
+            raise ValueError("RoomSearchFilters ERROR: Value 'check_out' must be later than check in plus 1 day!")
         return self
+
+
+

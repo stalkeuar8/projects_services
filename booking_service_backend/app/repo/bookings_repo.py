@@ -2,7 +2,7 @@ import datetime
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import contains_eager
+from sqlalchemy.orm import contains_eager, selectinload
 
 from app.models.booking import Bookings
 from app.models.hotel import Rooms
@@ -29,7 +29,6 @@ class BookingsRepo(BaseRepo[Bookings]):
         query = (
             select(Bookings)
             .where(
-                Bookings.room_id == room_id,
                 Bookings.status != "canceled",
                 Bookings.check_in < check_out,
                 Bookings.check_out > check_in,
@@ -42,3 +41,52 @@ class BookingsRepo(BaseRepo[Bookings]):
             return False
 
         return True
+    
+
+
+    @staticmethod
+    async def get_not_available_rooms(check_in: datetime.datetime, check_out: datetime.datetime, session: AsyncSession) -> list[int | None]:
+        query = (
+            select(Bookings.room_id)
+            .where(
+                Bookings.status != "canceled",
+                Bookings.check_in > check_out,
+                Bookings.check_out < check_in,
+            )
+            .order_by(Bookings.id.desc())
+        )
+
+        results = await session.execute(query)
+
+        ids = results.scalars().all()
+
+        return ids
+        # subq = (
+        #     select(Bookings.room_id.distinct())
+        # )
+        
+        # subq_results = await session.execute(subq)
+        # ids = subq_results.scalars().all()
+
+        # rooms_query = (
+        #     select(Rooms)
+        #     .where(Rooms.id.not_in(ids))
+        # )
+
+        # bookings_query_results = await session.execute(bookings_query)                                                                                                                                  
+        # rooms_ids_bookings = bookings_query_results.scalars().all()
+
+        # rooms_query_results = await session.execute(rooms_query)
+        # rooms_ids = rooms_query_results.scalars().all()
+
+        # available_rooms = []
+
+        # if rooms_ids_bookings:
+        #     for room_id in rooms_ids_bookings:
+        #         available_rooms.append(room_id)
+
+        # if rooms_ids:
+        #     for room_id in rooms_ids:
+        #         available_rooms.append(room_id)
+
+        # return available_rooms
