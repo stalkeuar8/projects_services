@@ -13,11 +13,11 @@
 
 # from app.models.base import Base
 # from app.orms.bookings_orm import BookingsOrm
-# from app.orms.clients_orm import ClientsOrm
+# from app.orms.clients_orm import UsersOrm
 # from app.orms.hotels_orm import HotelsOrm
 # from app.orms.rooms_orm import RoomsOrm
 # from app.schemas.bookings_schemas import BookingsSchema, BookingStatus
-# from app.schemas.clients_schemas import ClientsSchema
+# from app.schemas.clients_schemas import UsersSchema
 # from app.schemas.hotels_schemas import HotelsSchema
 # from app.schemas.rooms_schemas import RoomsSchema
 # from app.utils.room_search_filter import RoomSearchFilters
@@ -33,38 +33,38 @@
 
 # @pytest.mark.asyncio
 # async def test_clients_orm_crud_operations(session: AsyncSession):
-#     client_dto = ClientsSchema(id=1, full_name="John Doe", phone_number="+10000000000")
-#     await ClientsOrm.create(client_dto, session)
+#     client_dto = UsersSchema(id=1, full_name="John Doe", phone_number="+10000000000")
+#     await UsersOrm.create(client_dto, session)
 #     await session.commit()
 
-#     fetched = await ClientsOrm.find_by_id(1, session)
+#     fetched = await UsersOrm.find_by_id(1, session)
 #     assert fetched is not None
 #     assert fetched.full_name == "John Doe"
 
-#     fetched_by_phone = await ClientsOrm.find_by_phone_number("+10000000000", session)
+#     fetched_by_phone = await UsersOrm.find_by_phone_number("+10000000000", session)
 #     assert fetched_by_phone is not None
 #     assert fetched_by_phone.id == fetched.id
 
 #     # multi_create + multi_find_by_ids
 #     dto_list = [
-#         ClientsSchema(id=2, full_name="Alice", phone_number="+10000000001"),
-#         ClientsSchema(id=3, full_name="Bob", phone_number="+10000000002"),
+#         UsersSchema(id=2, full_name="Alice", phone_number="+10000000001"),
+#         UsersSchema(id=3, full_name="Bob", phone_number="+10000000002"),
 #     ]
-#     await ClientsOrm.multi_create(dto_list, session)
+#     await UsersOrm.multi_create(dto_list, session)
 #     await session.commit()
 
-#     found = await ClientsOrm.multi_find_by_ids([2, 3], session)
+#     found = await UsersOrm.multi_find_by_ids([2, 3], session)
 #     assert {c.id for c in found} == {2, 3}
 
-#     by_name = await ClientsOrm.find_by_name("Ali", session)
+#     by_name = await UsersOrm.find_by_name("Ali", session)
 #     assert len(by_name) == 1
 #     assert by_name[0].id == 2
 
-#     deleted = await ClientsOrm.delete_by_id(1, session)
+#     deleted = await UsersOrm.delete_by_id(1, session)
 #     assert deleted.id == 1
 #     await session.commit()
 
-#     assert (await ClientsOrm.find_by_id(1, session)) is None
+#     assert (await UsersOrm.find_by_id(1, session)) is None
 
 
 # @pytest.mark.asyncio
@@ -120,8 +120,8 @@
 #     await RoomsOrm.create(room_dto, session)
 #     await session.commit()
 
-#     client_dto = ClientsSchema(id=10, full_name="Client A", phone_number="+19999999999")
-#     await ClientsOrm.create(client_dto, session)
+#     client_dto = UsersSchema(id=10, full_name="Client A", phone_number="+19999999999")
+#     await UsersOrm.create(client_dto, session)
 #     await session.commit()
 
 #     check_in = datetime.datetime.now() + datetime.timedelta(days=2)

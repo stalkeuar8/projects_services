@@ -1,12 +1,11 @@
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import Annotated, Self
 
-from pydantic import BaseModel, Field, model_validator, field_validator, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.models.hotel import Rooms
 from app.schemas.hotels_schemas import RatingValid
-
-from datetime import datetime, timedelta, timezone
 
 CapacityValid = Annotated[int, Field(ge=1, le=3)]
 PriceValid = Annotated[int, Field(ge=0)]
@@ -19,21 +18,23 @@ class RoomCategory(str, Enum):
     presidental = "presidental"
 
 
-class RoomsSchema(BaseModel):
+class RoomBaseSchema(BaseModel):
     hotel_id: int
     category: RoomCategory
     capacity: CapacityValid
     price_per_night: PriceValid
 
+class RoomsSchema(RoomBaseSchema):
+    pass
 
-class RoomsResponseSchema(BaseModel):
-    id: int
-    hotel_id: int
-    category: RoomCategory
-    capacity: CapacityValid
-    price_per_night: PriceValid
+class RoomsCreateSchema(RoomBaseSchema):
+    pass
 
+
+class RoomsResponseSchema(RoomBaseSchema):
     model_config = ConfigDict(from_attributes=True)
+    
+    id: int
 
 
 class RoomsListResponseSchema(BaseModel):
@@ -49,12 +50,6 @@ class RoomsListResponseSchema(BaseModel):
 
         return self
 
-
-class RoomsCreateSchema(BaseModel):
-    hotel_id: int
-    category: RoomCategory
-    capacity: CapacityValid
-    price_per_night: PriceValid
 
 
 class RoomSearchFilters(BaseModel):
@@ -76,13 +71,11 @@ class RoomSearchFilters(BaseModel):
     check_in: datetime | None = None
     check_out: datetime | None = None
 
-
     @field_validator("check_in")
     def validate_date(cls, date: datetime) -> datetime:
         if date <= datetime.now(tz=timezone.utc):
             raise ValueError("RoomSearchFilters ERROR: Value 'check_in' must be later than now!")
         return date
-
 
     @model_validator(mode="after")
     def validate_check_out(self) -> Self:
@@ -98,6 +91,5 @@ class RoomSearchFilters(BaseModel):
         if self.check_out < self.check_in + timedelta(days=1):
             raise ValueError("RoomSearchFilters ERROR: Value 'check_out' must be later than check in plus 1 day!")
         return self
-
 
 

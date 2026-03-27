@@ -29,7 +29,7 @@ A robust, asynchronous core backend service for a hotel booking system. Built wi
 
 ```text
 ├── app/
-│   ├── models/          # SQLAlchemy declarative models (Base, Hotels, Rooms, Bookings, Clients)
+│   ├── models/          # SQLAlchemy declarative models (Base, Hotels, Rooms, Bookings, Users)
 │   ├── schemas/         # Pydantic models for strict data validation and DTOs
 │   ├── orms/            # Database access layer (CRUD operations and complex async queries)
 │   ├── services/        # Core business logic (BookingService, BackgroundProcesses)

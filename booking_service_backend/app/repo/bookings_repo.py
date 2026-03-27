@@ -41,8 +41,6 @@ class BookingsRepo(BaseRepo[Bookings]):
             return False
 
         return True
-    
-
 
     @staticmethod
     async def get_not_available_rooms(check_in: datetime.datetime, check_out: datetime.datetime, session: AsyncSession) -> list[int | None]:
@@ -64,7 +62,7 @@ class BookingsRepo(BaseRepo[Bookings]):
         # subq = (
         #     select(Bookings.room_id.distinct())
         # )
-        
+
         # subq_results = await session.execute(subq)
         # ids = subq_results.scalars().all()
 
@@ -73,7 +71,7 @@ class BookingsRepo(BaseRepo[Bookings]):
         #     .where(Rooms.id.not_in(ids))
         # )
 
-        # bookings_query_results = await session.execute(bookings_query)                                                                                                                                  
+        # bookings_query_results = await session.execute(bookings_query)
         # rooms_ids_bookings = bookings_query_results.scalars().all()
 
         # rooms_query_results = await session.execute(rooms_query)

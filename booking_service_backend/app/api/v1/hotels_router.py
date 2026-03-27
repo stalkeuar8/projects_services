@@ -36,9 +36,7 @@ async def create_hotel(body: HotelsCreateSchema, session: AsyncSession = Depends
     new_hotel: Hotels | None = await HotelsRepo.create(session=session, inserting_data_dto=body)
 
     if new_hotel:
-        return HotelsResponseSchema(
-            id=new_hotel.id, name=new_hotel.name, country=new_hotel.country, city=new_hotel.city, rating=new_hotel.rating
-        )
+        return HotelsResponseSchema(id=new_hotel.id, name=new_hotel.name, country=new_hotel.country, city=new_hotel.city, rating=new_hotel.rating)
 
     raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Hotel not created, Back-end error.")
 

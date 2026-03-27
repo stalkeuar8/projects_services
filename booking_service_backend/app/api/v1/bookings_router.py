@@ -1,14 +1,18 @@
-from typing import Any, Annotated
+from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.booking import Bookings
 from app.repo.bookings_repo import BookingsRepo
-from app.schemas.bookings_schemas import BookingsPreparationSchema, BookingsResponseSchema, BookingAvailabilityResponseSchema, BookingAvailabilityRequestSchema
+from app.schemas.bookings_schemas import (
+    AvailabilityForBookingResponseSchema,
+    AvailabilityForBookingRequestSchema,
+    BookingsPreparationSchema,
+    BookingsResponseSchema,
+)
 from app.services.booking_service import BookingService
 from app.settings.database import get_db
-
 
 booking_service = BookingService()
 
@@ -27,7 +31,6 @@ async def create_booking(body: BookingsPreparationSchema, session: AsyncSession 
             total_price=new_booking.total_price,
         )
 
-
     raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Room is not available for dates {body.check_in}-{body.check_out}")
 
 
@@ -39,26 +42,24 @@ async def get_booking_by_id(booking_id: int, session: AsyncSession = Depends(get
         return BookingsResponseSchema(
             id=booking.id,
             room_id=booking.room_id,
-            client_id=booking.client_id,
+            user_id=booking.user_id,
             created_at=booking.created_at,
             check_in=booking.check_in,
             check_out=booking.check_out,
-            total_price=booking.total_price
+            total_price=booking.total_price,
         )
-    
+
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Booking with id {booking_id} was not found")
 
 
-# THINK ABOUT!!!
-@bookings_router.get("/{room_id}/available", summary="Check room availability", response_model=BookingAvailabilityResponseSchema)
-async def check_room_availablity(params: Annotated[BookingAvailabilityRequestSchema, Query()], session: AsyncSession = Depends(get_db)) -> BookingAvailabilityResponseSchema | None:    
-    availability_result: bool | None = await booking_service.check_available(session=session, dto=params)
+# # THINK ABOUT!!!
+# @bookings_router.get("/{room_id}/available", summary="Check room availability", response_model=AvailabilityForBookingRequestSchema)
+# async def check_room_availablity(
+#     params: Annotated[AvailabilityForBookingRequestSchema, Query()], session: AsyncSession = Depends(get_db)
+# ) -> AvailabilityForBookingResponseSchema | None:
+#     availability_result: bool | None = await booking_service.check_available(session=session, dto=params)
 
-    if availability_result is not None:
+#     if availability_result is not None:
+#         return AvailabilityForBookingResponseSchema(**params.model_dump(), is_available=availability_result)
 
-        return BookingAvailabilityResponseSchema(
-            **params.model_dump(),
-            is_available=availability_result
-        )
-    
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Room with id {params.room_id} was not found")
+#     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Room with id {params.room_id} was not found")

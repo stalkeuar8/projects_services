@@ -5,18 +5,17 @@ from typing import Any, AsyncGenerator
 
 from fastapi import FastAPI
 
-from app.api.bookings_router import bookings_router
-from app.api.clients_router import clients_router
-from app.api.hotels_router import hotels_router
-from app.api.rooms_router import rooms_router
+from app.api.v1.bookings_router import bookings_router
+from app.api.v1.users_router import users_router
+from app.api.v1.hotels_router import hotels_router
+from app.api.v1.rooms_router import rooms_router
+from app.api.v1.auth_routers import auth_router
 from app.models.hotel import Rooms
 from app.repo.base_repo import create_tables
 from app.services.background_processes import BackgroundProcesses
 from app.services.booking_service import BookingService
 from app.settings.database import async_engine, async_session_factory
 from app.utils.paginator import ResultsPaginator
-
-# from app.utils.bg_tasks_observer import BackgroundTaskObserver
 
 
 # START FUNCS, ROUTERS
@@ -32,11 +31,12 @@ def create_app() -> FastAPI:
 
     app = FastAPI(title="Booking Service", lifespan=lifespan)
 
-    app.include_router(rooms_router)
-    app.include_router(clients_router)
-    app.include_router(hotels_router)
+    app.include_router(auth_router)
+    app.include_router(users_router)
     app.include_router(bookings_router)
-
+    app.include_router(hotels_router)
+    app.include_router(rooms_router)
+    
     return app
 
 

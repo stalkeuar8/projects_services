@@ -33,11 +33,11 @@ class BookingsBaseSchema(BaseModel):
 
 
 class BookingsPreparationSchema(BookingsBaseSchema):
-    client_id: int
+    user_id: int
 
 
 class BookingsCreateSchema(BookingsBaseSchema):
-    client_id: int
+    user_id: int
     created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
     total_price: int = Field(ge=0)
     status: BookingStatus
@@ -45,14 +45,14 @@ class BookingsCreateSchema(BookingsBaseSchema):
 
 class BookingsResponseSchema(BookingsBaseSchema):
     id: int
-    client_id: int
+    user_id: int
     created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
     total_price: int = Field(ge=0)
 
 
-class BookingAvailabilityResponseSchema(BookingsBaseSchema):
+class AvailabilityForBookingResponseSchema(BookingsBaseSchema):
     is_available: bool
 
 
-class BookingAvailabilityRequestSchema(BookingsBaseSchema):
+class AvailabilityForBookingRequestSchema(BookingsBaseSchema):
     pass

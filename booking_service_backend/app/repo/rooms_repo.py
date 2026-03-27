@@ -4,8 +4,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import contains_eager
 
-from app.models.hotel import Hotels, Rooms
 from app.models.booking import Bookings
+from app.models.hotel import Hotels, Rooms
 from app.repo.base_repo import BaseRepo
 from app.schemas.rooms_schemas import RoomSearchFilters
 
@@ -30,13 +30,10 @@ class RoomsRepo(BaseRepo[Rooms]):
         query = select(Rooms).join(Rooms.hotel)
 
         if filters.check_in and filters.check_out:
-            subquery = (
-                select(Bookings.room_id)
-                .where(
-                    Bookings.status != "canceled",
-                    Bookings.check_in < filters.check_out,
-                    Bookings.check_out > filters.check_in,
-                )
+            subquery = select(Bookings.room_id).where(
+                Bookings.status != "canceled",
+                Bookings.check_in < filters.check_out,
+                Bookings.check_out > filters.check_in,
             )
 
             query = query.where(Rooms.id.not_in(subquery))
@@ -74,9 +71,6 @@ class RoomsRepo(BaseRepo[Rooms]):
         rooms = results.scalars().all()
 
         return rooms
-
-
-
 
 
 # if filters.min_rating:
