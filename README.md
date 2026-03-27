@@ -23,7 +23,9 @@ Stack: Python, PostgreSQL, SQLAlchemy 2.0, Pydantic V2, Asyncio, Docker
 
 ### 🔮 Future Plans
 * Integrate FastAPI, JWT-based user authentication, Redis/Taskiq brokers
-=======
+
+
+
 
 
 # [☕ Smart Cafe AI Bot](telegram/cafe_bot_root/cafe_bot)
