@@ -4,6 +4,7 @@ from typing import Annotated, Any, Sequence
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.utils.response_parser import create_room_response
 from app.api.v1.bookings_router import booking_service
 from app.models.hotel import Rooms
 from app.repo.bookings_repo import BookingsRepo
@@ -34,13 +35,7 @@ async def get_room_by_id(room_id: int, session: AsyncSession = Depends(get_db)) 
     room: Rooms | None = await RoomsRepo.find_by_id(id_to_find=room_id, session=session)
 
     if room:
-        return RoomsResponseSchema(
-            id=room.id,
-            hotel_id=room.hotel_id,
-            capacity=room.capacity,
-            price_per_night=room.price_per_night,
-            category=RoomCategory(room.category),
-        )
+        return create_room_response(room_obj=room)
 
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Room with id {room_id} was not found")
 
@@ -62,13 +57,7 @@ async def create_room(body: RoomsCreateSchema, session: AsyncSession = Depends(g
     new_room: Rooms | None = await RoomsRepo.create(session=session, inserting_data_dto=body)
 
     if new_room:
-        return RoomsResponseSchema(
-            id=new_room.id,
-            hotel_id=new_room.hotel_id,
-            capacity=new_room.capacity,
-            price_per_night=new_room.price_per_night,
-            category=RoomCategory(new_room.category),
-        )
+        return create_room_response(room_obj=new_room)
 
     raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Client not created, Back-end error.")
 
@@ -78,12 +67,6 @@ async def delete_room_by_id(room_id: int, session: AsyncSession = Depends(get_db
     deleted_room: Rooms | None = await RoomsRepo.delete_by_id(session=session, id_to_delete=room_id)
 
     if deleted_room:
-        return RoomsResponseSchema(
-            id=deleted_room.id,
-            hotel_id=deleted_room.hotel_id,
-            capacity=deleted_room.capacity,
-            price_per_night=deleted_room.price_per_night,
-            category=RoomCategory(deleted_room.category),
-        )
+        return create_room_response(room_obj=deleted_room)
 
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Room with id {room_id} was not found")

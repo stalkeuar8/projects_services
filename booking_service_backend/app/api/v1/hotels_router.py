@@ -3,6 +3,7 @@ from typing import Annotated, Any, Sequence
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.utils.response_parser import create_hotel_response
 from app.models.hotel import Hotels
 from app.repo.hotels_repo import HotelsRepo
 from app.schemas.hotels_schemas import HotelsCreateSchema, HotelSearchFilters, HotelsListResponseSchema, HotelsResponseSchema
@@ -26,7 +27,7 @@ async def get_hotel_by_id(hotel_id: int, session: AsyncSession = Depends(get_db)
     hotel: Hotels | None = await HotelsRepo.find_by_id(id_to_find=hotel_id, session=session)
 
     if hotel:
-        return HotelsResponseSchema(id=hotel.id, name=hotel.name, country=hotel.country, city=hotel.city, rating=hotel.rating)
+        return create_hotel_response(hotel_obj=hotel)
 
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Hotel with id {hotel_id} was not found")
 
@@ -36,7 +37,7 @@ async def create_hotel(body: HotelsCreateSchema, session: AsyncSession = Depends
     new_hotel: Hotels | None = await HotelsRepo.create(session=session, inserting_data_dto=body)
 
     if new_hotel:
-        return HotelsResponseSchema(id=new_hotel.id, name=new_hotel.name, country=new_hotel.country, city=new_hotel.city, rating=new_hotel.rating)
+        return create_hotel_response(hotel_obj=new_hotel)
 
     raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Hotel not created, Back-end error.")
 
@@ -46,8 +47,7 @@ async def delete_hotel_by_id(room_id: int, session: AsyncSession = Depends(get_d
     deleted_hotel: Hotels | None = await HotelsRepo.delete_by_id(session=session, id_to_delete=room_id)
 
     if deleted_hotel:
-        return HotelsResponseSchema(
-            id=deleted_hotel.id, name=deleted_hotel.name, country=deleted_hotel.country, city=deleted_hotel.city, rating=deleted_hotel.rating
-        )
+        return create_hotel_response(hotel_obj=deleted_hotel)
+
 
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Hotel with id {room_id} was not found")

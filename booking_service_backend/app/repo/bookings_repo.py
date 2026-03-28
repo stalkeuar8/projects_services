@@ -1,6 +1,6 @@
 import datetime
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import contains_eager, selectinload
 
@@ -13,11 +13,44 @@ class BookingsRepo(BaseRepo[Bookings]):
     model = Bookings
 
     @staticmethod
+    async def find_by_id(session: AsyncSession, booking_id: int, current_user_id: int | None = None) -> Bookings | None:
+        
+        query = (
+            select(Bookings)
+            .where(Bookings.id==booking_id)
+        )
+
+        if current_user_id:
+            query = query.where(Bookings.user_id==current_user_id)
+
+        result = await session.execute(query)
+        booking = result.scalar()
+
+        return booking
+
+    @staticmethod
     async def find_by_hotel_id(hotel_id: int, session: AsyncSession) -> Bookings | None:
         query = select(Bookings).join(Bookings.room).where(Rooms.hotel_id == hotel_id).options(contains_eager(Bookings.room))
         result = await session.execute(query)
         booking = result.scalar_one_or_none()
         return booking
+
+
+    @staticmethod
+    async def change_booking_status(booking_id: int, new_status: str, session: AsyncSession) -> Bookings | None:
+        query = (
+            update(Bookings)
+            .where(Bookings.id==booking_id)
+            .values(status=new_status)
+            .returning(True)
+        )
+
+        result = await session.execute(query)
+        updated_booking = result.scalar()
+
+        return updated_booking 
+
+
 
     @staticmethod
     async def check_is_available(

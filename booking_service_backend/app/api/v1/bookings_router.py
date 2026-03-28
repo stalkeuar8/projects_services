@@ -3,6 +3,7 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.utils.response_parser import create_booking_response
 from app.models.booking import Bookings
 from app.models.user import Users
 from app.repo.bookings_repo import BookingsRepo
@@ -36,21 +37,13 @@ async def create_booking(body: BookingsPreparationSchema, session: AsyncSession 
     raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Room is not available for dates {body.check_in}-{body.check_out}")
 
 
-@bookings_router.get("/{booking_id}", summary="Get booking by id", response_model=BookingsResponseSchema)
+@bookings_router.get("/{booking_id}", summary="Get booking by id (Only bookings created by current user)", response_model=BookingsResponseSchema)
 async def get_booking_by_id(booking_id: int, session: AsyncSession = Depends(get_db), current_user: Users = Depends(get_current_user)) -> BookingsResponseSchema | None:
-    booking: Bookings | None = await BookingsRepo.find_by_id(session=session, id_to_find=booking_id)
+    booking: Bookings | None = await BookingsRepo.find_by_id(session=session, id_to_find=booking_id, current_user_id=current_user.id)
 
     if booking:
-        return BookingsResponseSchema(
-            id=booking.id,
-            room_id=booking.room_id,
-            user_id=booking.user_id,
-            created_at=booking.created_at,
-            check_in=booking.check_in,
-            check_out=booking.check_out,
-            total_price=booking.total_price,
-        )
-
+        return create_booking_response(booking)
+    
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Booking with id {booking_id} was not found")
 
 

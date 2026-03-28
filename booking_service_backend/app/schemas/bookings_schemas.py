@@ -56,3 +56,9 @@ class AvailabilityForBookingResponseSchema(BookingsBaseSchema):
 
 class AvailabilityForBookingRequestSchema(BookingsBaseSchema):
     pass
+
+
+
+class ChangeBookingStatusSchema(BaseModel):
+    id: int
+    status: BookingStatus
