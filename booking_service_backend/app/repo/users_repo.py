@@ -10,7 +10,7 @@ class UsersRepo(BaseRepo[Users]):
 
     @staticmethod
     async def find_by_id(id_to_find: int, session: AsyncSession) -> Users | None:
-        query = select(Users).where(Users.id == id_to_find)
+        query = select(Users).where(Users.id == id_to_find, Users.deleted_at==None)
 
         result = await session.execute(query)
         found_obj = result.scalar()
@@ -19,7 +19,7 @@ class UsersRepo(BaseRepo[Users]):
 
     @staticmethod
     async def find_by_contact_info(session: AsyncSession, email: str | None = None, phone_number: str | None = None) -> Users | None:
-        query = select(Users)
+        query = select(Users).where(Users.deleted_at==None)
 
         if email:
             query = query.where(Users.email == email)

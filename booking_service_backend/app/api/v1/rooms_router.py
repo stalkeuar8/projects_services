@@ -52,21 +52,3 @@ async def check_room_availability(
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Room with id {room_id} was not found")
 
 
-@rooms_router.post("/", summary="Create room", response_model=RoomsResponseSchema)
-async def create_room(body: RoomsCreateSchema, session: AsyncSession = Depends(get_db)) -> RoomsResponseSchema | None:
-    new_room: Rooms | None = await RoomsRepo.create(session=session, inserting_data_dto=body)
-
-    if new_room:
-        return create_room_response(room_obj=new_room)
-
-    raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Client not created, Back-end error.")
-
-
-@rooms_router.delete("/{room_id}", summary="Delete room by id", response_model=RoomsResponseSchema)
-async def delete_room_by_id(room_id: int, session: AsyncSession = Depends(get_db)) -> RoomsResponseSchema | None:
-    deleted_room: Rooms | None = await RoomsRepo.delete_by_id(session=session, id_to_delete=room_id)
-
-    if deleted_room:
-        return create_room_response(room_obj=deleted_room)
-
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Room with id {room_id} was not found")

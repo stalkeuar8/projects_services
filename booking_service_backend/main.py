@@ -13,6 +13,10 @@ from app.api.v1.bookings_router import bookings_router
 from app.api.v1.hotels_router import hotels_router
 from app.api.v1.rooms_router import rooms_router
 from app.api.v1.users_router import users_router
+from app.api.v1.admin.admin_bookings_router import admin_bookings_router
+from app.api.v1.admin.admin_hotels_router import admin_hotels_router
+from app.api.v1.admin.admin_users_router import admin_users_router
+from app.api.v1.admin.admin_rooms_router import admin_rooms_router
 from app.models.hotel import Rooms
 from app.repo.base_repo import create_tables
 from app.services.background_processes import BackgroundProcesses
@@ -38,6 +42,10 @@ def create_app() -> FastAPI:
     app.include_router(bookings_router)
     app.include_router(hotels_router)
     app.include_router(rooms_router)
+    app.include_router(admin_bookings_router)
+    app.include_router(admin_hotels_router)
+    app.include_router(admin_rooms_router)
+    app.include_router(admin_users_router)
     
     return app
 

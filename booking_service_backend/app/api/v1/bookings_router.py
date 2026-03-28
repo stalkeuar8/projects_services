@@ -22,13 +22,14 @@ booking_service = BookingService()
 bookings_router = APIRouter(prefix="/bookings", tags=["Bookings"])
 
 
-@bookings_router.post("/", summary="Create booking", response_model=BookingsResponseSchema)
-async def create_booking(body: BookingsPreparationSchema, session: AsyncSession = Depends(get_db)) -> BookingsResponseSchema | None:
-    new_booking: Bookings | None = await booking_service.new_booking(dto=body, session=session)
+@bookings_router.post("/", summary="Create booking (Only logined users)", response_model=BookingsResponseSchema)
+async def create_booking(body: BookingsPreparationSchema, session: AsyncSession = Depends(get_db), current_user: Users = Depends(get_current_user)) -> BookingsResponseSchema:
+    new_booking: Bookings | None = await booking_service.new_booking(user_id=current_user.id, dto=body, session=session)
 
     if new_booking:
         return BookingsResponseSchema(
             **body.model_dump(),
+            user_id=current_user.id,
             id=new_booking.id,
             created_at=new_booking.created_at,
             total_price=new_booking.total_price,
@@ -38,7 +39,7 @@ async def create_booking(body: BookingsPreparationSchema, session: AsyncSession 
 
 
 @bookings_router.get("/{booking_id}", summary="Get booking by id (Only bookings created by current user)", response_model=BookingsResponseSchema)
-async def get_booking_by_id(booking_id: int, session: AsyncSession = Depends(get_db), current_user: Users = Depends(get_current_user)) -> BookingsResponseSchema | None:
+async def get_booking_by_id(booking_id: int, session: AsyncSession = Depends(get_db), current_user: Users = Depends(get_current_user)) -> BookingsResponseSchema:
     booking: Bookings | None = await BookingsRepo.find_by_id(session=session, id_to_find=booking_id, current_user_id=current_user.id)
 
     if booking:

@@ -17,10 +17,6 @@ class UsersResponseSchema(UserBaseSchema):
     id: int
 
 
-class DeletedUserResponseSchema(UsersResponseSchema):
-    is_deleted: bool
-
-
 class UsersListResponseSchema(BaseModel):
     users: list[UsersResponseSchema]
     total: int | None = None

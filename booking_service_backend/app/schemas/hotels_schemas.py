@@ -46,3 +46,10 @@ class HotelSearchFilters(BaseModel):
     city: str | None = None
     min_rating: RatingValid | None = None
     max_rating: RatingValid | None = None
+
+
+class HotelEditSchema(BaseModel):
+    name: str | None = None
+    country: str | None = None
+    city: str | None = None
+    rating: RatingValid | None = None

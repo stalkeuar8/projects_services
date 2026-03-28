@@ -35,14 +35,14 @@ class BookingService:
 
         return room_status
 
-    async def _prepare_dto(self, short_dto: BookingsPreparationSchema, session: AsyncSession) -> BookingsCreateSchema:
+    async def _prepare_dto(self, user_id: int, short_dto: BookingsPreparationSchema, session: AsyncSession) -> BookingsCreateSchema:
 
         price_per_night = await RoomsRepo.get_price_per_night(id_to_find=short_dto.room_id, session=session)
         total_days = (short_dto.check_out - short_dto.check_in).days
 
         dto = BookingsCreateSchema(
             room_id=short_dto.room_id,
-            user_id=short_dto.user_id,
+            user_id=user_id,
             check_in=short_dto.check_in,
             check_out=short_dto.check_out,
             total_price=total_days * price_per_night,
@@ -51,13 +51,13 @@ class BookingService:
 
         return dto
 
-    async def new_booking(self, dto: BookingsPreparationSchema, session: AsyncSession) -> Bookings | None:
-        obj_to_check = BookingsPreparationSchema(room_id=dto.room_id, check_in=dto.check_in, check_out=dto.check_out, user_id=dto.user_id)
+    async def new_booking(self, user_id: int, dto: BookingsPreparationSchema, session: AsyncSession) -> Bookings | None:
+        obj_to_check = AvailabilityForBookingRequestSchema(room_id=dto.room_id, check_in=dto.check_in, check_out=dto.check_out)
 
         availability_result = await self.check_available(dto=obj_to_check, session=session)
 
         if availability_result:
-            new_booking_info = await self._prepare_dto(short_dto=dto, session=session)
+            new_booking_info = await self._prepare_dto(short_dto=dto, user_id=user_id, session=session)
             new_booking = await BookingsRepo.create(inserting_data_dto=new_booking_info, session=session)
 
             return new_booking

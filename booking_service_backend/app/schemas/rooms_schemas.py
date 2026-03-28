@@ -92,3 +92,11 @@ class RoomSearchFilters(BaseModel):
         if self.check_out < self.check_in + timedelta(days=1):
             raise ValueError("RoomSearchFilters ERROR: Value 'check_out' must be later than check in plus 1 day!")
         return self
+
+
+
+class RoomEditSchema(BaseModel):
+    hotel_id: int | None = None
+    category: RoomCategory | None = None
+    capacity: CapacityValid | None = None
+    price_per_night: PriceValid | None = None

@@ -31,23 +31,3 @@ async def get_hotel_by_id(hotel_id: int, session: AsyncSession = Depends(get_db)
 
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Hotel with id {hotel_id} was not found")
 
-
-@hotels_router.post("/", summary="Create hotel", response_model=HotelsResponseSchema)
-async def create_hotel(body: HotelsCreateSchema, session: AsyncSession = Depends(get_db)) -> HotelsResponseSchema | None:
-    new_hotel: Hotels | None = await HotelsRepo.create(session=session, inserting_data_dto=body)
-
-    if new_hotel:
-        return create_hotel_response(hotel_obj=new_hotel)
-
-    raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Hotel not created, Back-end error.")
-
-
-@hotels_router.delete("/{room_id}", summary="Delete hotel by id", response_model=HotelsResponseSchema)
-async def delete_hotel_by_id(room_id: int, session: AsyncSession = Depends(get_db)) -> HotelsResponseSchema | None:
-    deleted_hotel: Hotels | None = await HotelsRepo.delete_by_id(session=session, id_to_delete=room_id)
-
-    if deleted_hotel:
-        return create_hotel_response(hotel_obj=deleted_hotel)
-
-
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Hotel with id {room_id} was not found")

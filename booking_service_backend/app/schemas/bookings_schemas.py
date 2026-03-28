@@ -33,8 +33,7 @@ class BookingsBaseSchema(BaseModel):
 
 
 class BookingsPreparationSchema(BookingsBaseSchema):
-    user_id: int
-
+    pass
 
 class BookingsCreateSchema(BookingsBaseSchema):
     user_id: int
