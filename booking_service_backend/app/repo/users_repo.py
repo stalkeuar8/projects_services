@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.user import Users
 from app.repo.base_repo import BaseRepo
 
+
 class UsersRepo(BaseRepo[Users]):
     model = Users
 
@@ -16,16 +17,15 @@ class UsersRepo(BaseRepo[Users]):
 
         return found_obj
 
-
     @staticmethod
     async def find_by_contact_info(session: AsyncSession, email: str | None = None, phone_number: str | None = None) -> Users | None:
         query = select(Users)
 
         if email:
-            query = query.where(Users.email==email)
-        
+            query = query.where(Users.email == email)
+
         else:
-            query = query.where(Users.phone_number==phone_number)
+            query = query.where(Users.phone_number == phone_number)
 
         result = await session.execute(query)
         user = result.scalar()

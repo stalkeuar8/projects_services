@@ -4,15 +4,17 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.booking import Bookings
+from app.models.user import Users
 from app.repo.bookings_repo import BookingsRepo
 from app.schemas.bookings_schemas import (
-    AvailabilityForBookingResponseSchema,
     AvailabilityForBookingRequestSchema,
+    AvailabilityForBookingResponseSchema,
     BookingsPreparationSchema,
     BookingsResponseSchema,
 )
 from app.services.booking_service import BookingService
 from app.settings.database import get_db
+from app.auth.jwt_gen import get_current_user
 
 booking_service = BookingService()
 
@@ -35,7 +37,7 @@ async def create_booking(body: BookingsPreparationSchema, session: AsyncSession 
 
 
 @bookings_router.get("/{booking_id}", summary="Get booking by id", response_model=BookingsResponseSchema)
-async def get_booking_by_id(booking_id: int, session: AsyncSession = Depends(get_db)) -> BookingsResponseSchema | None:
+async def get_booking_by_id(booking_id: int, session: AsyncSession = Depends(get_db), current_user: Users = Depends(get_current_user)) -> BookingsResponseSchema | None:
     booking: Bookings | None = await BookingsRepo.find_by_id(session=session, id_to_find=booking_id)
 
     if booking:

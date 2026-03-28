@@ -24,8 +24,10 @@ class RoomBaseSchema(BaseModel):
     capacity: CapacityValid
     price_per_night: PriceValid
 
+
 class RoomsSchema(RoomBaseSchema):
     pass
+
 
 class RoomsCreateSchema(RoomBaseSchema):
     pass
@@ -33,7 +35,7 @@ class RoomsCreateSchema(RoomBaseSchema):
 
 class RoomsResponseSchema(RoomBaseSchema):
     model_config = ConfigDict(from_attributes=True)
-    
+
     id: int
 
 
@@ -49,7 +51,6 @@ class RoomsListResponseSchema(BaseModel):
             self.total = rooms_length
 
         return self
-
 
 
 class RoomSearchFilters(BaseModel):
@@ -91,5 +92,3 @@ class RoomSearchFilters(BaseModel):
         if self.check_out < self.check_in + timedelta(days=1):
             raise ValueError("RoomSearchFilters ERROR: Value 'check_out' must be later than check in plus 1 day!")
         return self
-
-

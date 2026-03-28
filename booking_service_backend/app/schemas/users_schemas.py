@@ -8,13 +8,14 @@ class UserBaseSchema(BaseModel):
     phone_number: str
     email: EmailStr
 
+
 class UsersCreateSchema(UserBaseSchema):
-    pass
+    hashed_password: bytes
 
 
 class UsersResponseSchema(UserBaseSchema):
     id: int
-    
+
 
 class DeletedUserResponseSchema(UsersResponseSchema):
     is_deleted: bool

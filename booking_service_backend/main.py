@@ -3,20 +3,22 @@ import datetime
 from contextlib import asynccontextmanager
 from typing import Any, AsyncGenerator
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
+from fastapi.responses import JSONResponse
 
+from sqlalchemy.exc import IntegrityError 
+
+from app.api.v1.auth_routers import auth_router
 from app.api.v1.bookings_router import bookings_router
-from app.api.v1.users_router import users_router
 from app.api.v1.hotels_router import hotels_router
 from app.api.v1.rooms_router import rooms_router
-from app.api.v1.auth_routers import auth_router
+from app.api.v1.users_router import users_router
 from app.models.hotel import Rooms
 from app.repo.base_repo import create_tables
 from app.services.background_processes import BackgroundProcesses
 from app.services.booking_service import BookingService
 from app.settings.database import async_engine, async_session_factory
 from app.utils.paginator import ResultsPaginator
-
 
 # START FUNCS, ROUTERS
 
@@ -42,6 +44,27 @@ def create_app() -> FastAPI:
 
 app = create_app()
 
+
+
+@app.exception_handler(IntegrityError)
+async def handle_integrity_error(request: Request, exc: IntegrityError) -> None:
+    error_msg = str(exc.orig)
+
+    error_details = 'Error caused becuase '
+
+    if 'phone_number' in error_msg:
+        error_details += f"'phone_number' "
+    if "email" in error_msg:
+        error_details += f"'email' "
+    error_details += ' already exists, must be unique'
+
+    return JSONResponse(
+        status_code=status.HTTP_409_CONFLICT,
+        content={
+            "error_msg" : error_msg,
+            "details" : error_details
+        }
+    )
 
 # async def main() -> None:
 

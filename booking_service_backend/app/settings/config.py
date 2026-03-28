@@ -1,7 +1,10 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+class Settings(BaseSettings):
 
-class DatabaseSettings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", extra='ignore')
+
+class DatabaseSettings(Settings):
     DB_USER: str
     DB_NAME: str
     DB_PASS: str
@@ -13,7 +16,15 @@ class DatabaseSettings(BaseSettings):
         url = f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASS}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
         return url
 
-    model_config = SettingsConfigDict(env_file=".env")
+
+class JwtSettings(Settings):
+
+    SECRET_KEY: str
+
+    @property
+    def secret_key(self):
+        return self.SECRET_KEY
 
 
 database_settings = DatabaseSettings()
+jwt_settings = JwtSettings()

@@ -5,13 +5,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.user import Users
 from app.repo.users_repo import UsersRepo
-from app.schemas.users_schemas import UsersCreateSchema, DeletedUserResponseSchema, UsersListResponseSchema, UsersResponseSchema
+from app.schemas.users_schemas import DeletedUserResponseSchema, UsersCreateSchema, UsersListResponseSchema, UsersResponseSchema
 from app.settings.database import get_db
+from app.auth.jwt_gen import get_current_user
 
 users_router = APIRouter(prefix="/users", tags=["Users"])
 
 
-
+@users_router.get("/me", summary="Get users profile (only logined users)", response_model=UsersResponseSchema)
+async def get_users_profile(current_user: Users = Depends(get_current_user))
 
 @users_router.get("/{user_id}", summary="Get all users", response_model=UsersResponseSchema)
 async def get_user_by_id(user_id: int, session: AsyncSession = Depends(get_db)) -> UsersResponseSchema | None:
