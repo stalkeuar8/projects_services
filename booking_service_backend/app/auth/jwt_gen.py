@@ -2,6 +2,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import jwt
+import uuid
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -19,8 +20,9 @@ oauth2_scheme = OAuth2PasswordBearer("/auth/login")
 
 def create_access_token(user_id: int) -> str:
     expires_at = datetime.now(tz=timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    jti = str(uuid.uuid4())
 
-    payload = {"sub": str(user_id), "exp": expires_at}
+    payload = {"sub": str(user_id), "exp": expires_at, "jti": jti}
 
     encoded_jwt = jwt.encode(payload=payload, key=SECRET_KEY, algorithm=ALGORITHM)
 

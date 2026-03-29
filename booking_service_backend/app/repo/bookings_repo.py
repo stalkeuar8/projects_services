@@ -6,10 +6,20 @@ from sqlalchemy.orm import contains_eager, selectinload
 
 from app.models.booking import Bookings
 from app.models.hotel import Rooms
-from app.schemas.bookings_schemas import BookingsStatsRequestSchema, BookingStatsResponseSchema, BookingStatus
+from app.schemas.bookings_schemas import BookingsStatsRequestSchema, BookingStatsResponseSchema, BookingStatus, BookingsCreateSchema
 
 
 class BookingsRepo:
+
+    @staticmethod
+    async def new_booking(inserting_data_dto: BookingsCreateSchema, session: AsyncSession) -> Bookings | None:
+        new_obj = Bookings(**inserting_data_dto.model_dump())
+
+        session.add(new_obj)
+        await session.flush()
+
+        return new_obj
+
 
     @staticmethod
     async def find_my_booking_by_id(session: AsyncSession, booking_id: int, current_user_id: int) -> Bookings | None:
@@ -39,7 +49,8 @@ class BookingsRepo:
         query = (
             update(Bookings)
             .where(Bookings.id==booking_id, Bookings.user_id==current_user_id)
-            .values(status=BookingStatus('canceled')).returning(True)
+            .values(status=BookingStatus('canceled')).returning(Bookings)
+            
         )
 
         result = await session.execute(query)
@@ -64,6 +75,7 @@ class BookingsRepo:
                 Bookings.check_out > check_in,
             )
             .order_by(Bookings.id.desc())
+            .with_for_update(nowait=True)
         )
         result = await session.execute(query)
         booking = result.scalars().first()
@@ -116,7 +128,7 @@ class AdminBookingsRepo:
 
     @staticmethod
     async def admin_change_booking_status(booking_id: int, new_status: str, session: AsyncSession) -> Bookings | None:
-        query = update(Bookings).where(Bookings.id == booking_id).values(status=new_status).returning(True)
+        query = update(Bookings).where(Bookings.id == booking_id).values(status=new_status).returning(Bookings)
 
         result = await session.execute(query)
         updated_booking = result.scalar()
@@ -128,7 +140,7 @@ class AdminBookingsRepo:
     async def admin_delete_booking(booking_id: int, session: AsyncSession) -> Bookings | None:
 
         query = (
-            delete(Bookings).where(Bookings.id==booking_id).returning(True)
+            delete(Bookings).where(Bookings.id==booking_id).returning(Bookings)
         )
 
         result = await session.execute(query)

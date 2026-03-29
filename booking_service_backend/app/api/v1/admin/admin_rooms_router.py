@@ -22,7 +22,7 @@ async def admin_get_room_by_id(hotel_id: int, session: AsyncSession = Depends(ge
     hotel: Rooms | None = await AdminRoomsRepo.admin_find_by_id(id_to_find=hotel_id, session=session)
 
     if hotel:
-        return create_room_response(hotel_obj=hotel)
+        return create_room_response(hotel)
 
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Hotel with id {hotel_id} was not found")
 

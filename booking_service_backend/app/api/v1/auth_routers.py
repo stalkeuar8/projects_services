@@ -1,15 +1,20 @@
 from typing import Annotated, Any, Sequence
 
+import redis.asyncio as redis
 import bcrypt
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.jwt_gen import create_access_token
+from app.auth.jwt_gen import create_access_token, oauth2_scheme, decode_jwt
 from app.models.user import Users
 from app.repo.users_repo import UsersRepo, AdminUsersRepo
-from app.schemas.auth.users_auth_schemas import UserAuthResponseSchema, UserLoginRequestSchema, UserRegisterRequestSchema
+from app.schemas.auth.users_auth_schemas import UserAuthResponseSchema, UserLoginRequestSchema, UserRegisterRequestSchema, RefreshTokenRequestSchema, RefreshTokenResponseSchema
 from app.schemas.users_schemas import UsersCreateSchema
 from app.settings.database import get_db
+from app.settings.redis import get_redis    
+
 
 auth_router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -51,3 +56,48 @@ async def register(body: UserRegisterRequestSchema, session: AsyncSession = Depe
         )
 
     raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Back-end server BAD GATEWAY")
+
+
+
+@auth_router.post("/logout", summary="Logout")
+async def logout(jwt_token: str = Depends(oauth2_scheme), redis_session: redis.Redis = Depends(get_redis)) -> dict[str, Any]:
+
+    payload = decode_jwt(jwt_token=jwt_token)
+
+    exp = payload.get('exp', None)
+
+    if exp is not None:
+        current_time = datetime.now(tz=timezone.utc)
+        time_left = int(exp-current_time)
+
+        if time_left > 0:
+            await redis_session.set(f'blacklist:{jwt_token}', "1", ex=time_left)
+
+        return JSONResponse(status_code=status.HTTP_200_OK, content={"message":'Successfull log out'})
+    
+    raise HTTPException(status_code=status.h4)
+    
+
+@auth_router.post("/refresh", summary='Refresh token', response_model=RefreshTokenResponseSchema)
+async def refresh(request: RefreshTokenRequestSchema, redis_session: redis.Redis = Depends(get_redis)) -> RefreshTokenResponseSchema:
+
+    try:
+        payload = decode_jwt(request.refresh_token)
+
+        if payload.get("type") != 'refresh':
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token type")
+        
+        user_id = payload.get("sub")
+
+    except HTTPException:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token expired or invalid token type")
+    
+
+    stored_token = await redis_session.get(f"refresh:{user_id}")
+
+    if not stored_token or stored_token != request.refresh_token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
+    
+    new_access_token = create_access_token(int(user_id))
+
+    return RefreshTokenResponseSchema(access_token=new_access_token, type='bearer')

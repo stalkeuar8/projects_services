@@ -32,3 +32,13 @@ class UserAuthResponseSchema(UserBaseSchema):
     role: UsersRole
     is_logined: bool
     jwt_token: str
+
+
+
+class RefreshTokenRequestSchema(BaseModel):
+    refresh_token: str
+
+class RefreshTokenResponseSchema(BaseModel):
+    access_token: str
+    type: str
+

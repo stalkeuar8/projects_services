@@ -35,7 +35,7 @@ async def admin_get_booking_by_id(booking_id: int, session: AsyncSession = Depen
 
 
 @admin_bookings_router.patch("/{booking_id}/status", summary="Change booking status (Admin)", response_model=BookingsResponseSchema)
-async def admin_change_booking_status(booking_id: int, new_status=Query(), session: AsyncSession = Depends(get_db)) -> BookingsResponseSchema | None:
+async def admin_change_booking_status(booking_id: int, new_status: str = Query(), session: AsyncSession = Depends(get_db)) -> BookingsResponseSchema | None:
     booking: Bookings | None = await AdminBookingsRepo.admin_change_booking_status(booking_id=booking_id, new_status=new_status, session=session)
 
     if booking:

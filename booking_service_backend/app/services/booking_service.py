@@ -58,7 +58,7 @@ class BookingService:
 
         if availability_result:
             new_booking_info = await self._prepare_dto(short_dto=dto, user_id=user_id, session=session)
-            new_booking = await BookingsRepo.create(inserting_data_dto=new_booking_info, session=session)
+            new_booking = await BookingsRepo.new_booking(inserting_data_dto=new_booking_info, session=session)
 
             return new_booking
 

@@ -68,7 +68,7 @@ class BaseAdminRepo(Generic[T]):
                 update(cls.model)
                 .where(cls.model.id==id_to_delete)
                 .values(deleted_at=current_time)
-                .returning(True)
+                .returning(cls.model)
             )
             
             result = await session.execute(query)

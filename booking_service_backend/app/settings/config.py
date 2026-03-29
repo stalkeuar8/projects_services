@@ -25,6 +25,13 @@ class JwtSettings(Settings):
     def secret_key(self):
         return self.SECRET_KEY
 
+class RedisSettings(Settings):
+    DB_HOST: str
 
+    @property
+    def REDIS_url(self) -> str:
+        return f"redis://{self.DB_HOST}:6379/0"
+    
 database_settings = DatabaseSettings()
 jwt_settings = JwtSettings()
+redis_settings = RedisSettings()
