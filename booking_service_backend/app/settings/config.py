@@ -32,6 +32,17 @@ class RedisSettings(Settings):
     def REDIS_url(self) -> str:
         return f"redis://{self.DB_HOST}:6379/0"
     
+
+
+class BotSettings(Settings):
+    BOT_TOKEN: str
+
+    @property
+    def BOT_TOKEN(self) -> str:
+        return self.BOT_TOKEN
+    
+
 database_settings = DatabaseSettings()
 jwt_settings = JwtSettings()
 redis_settings = RedisSettings()
+bot_settings = BotSettings()

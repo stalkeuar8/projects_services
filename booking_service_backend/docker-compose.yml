@@ -47,6 +47,16 @@ services:
     volumes:
       - .:/app
 
+  bot:
+    build: .
+    command: python app/bot/bot_main.py
+    depends_on:
+      - postgres
+      - app
+    env_file:
+      - .env
+    environment:
+      - PYTHONPATH=/app
 networks:
   booking_network:
     driver: bridge
