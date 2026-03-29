@@ -4,8 +4,9 @@ from typing import Annotated, Self
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from app.models.hotel import Rooms
+from app.models.booking import Bookings
 from app.schemas.hotels_schemas import RatingValid
+from app.schemas.bookings_schemas import BookingsResponseSchema
 
 CapacityValid = Annotated[int, Field(ge=1, le=3)]
 PriceValid = Annotated[int, Field(ge=0)]
@@ -92,7 +93,6 @@ class RoomSearchFilters(BaseModel):
         if self.check_out < self.check_in + timedelta(days=1):
             raise ValueError("RoomSearchFilters ERROR: Value 'check_out' must be later than check in plus 1 day!")
         return self
-
 
 
 class RoomEditSchema(BaseModel):

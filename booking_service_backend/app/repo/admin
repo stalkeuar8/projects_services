@@ -1,0 +1,32 @@
++BOOKINGS (ОКРЕМІ МЕТОДИ!):
+
+-get all bookings by id
+-change booking status
+-delete booking from db by id
+-get bookings stats (total bookings, total success, canceled, checked in)- tag Admin Analytic
+
+
++USERS:
+
+-create user
+-delete user (deleted at)
+-get user info by id
+-get users stats (bookings qty, total orders price) - tag Admin Analytic
+
+
++HOTELS:
+
+-get by id
+-create hotel
+-delete hotel (deleted at)
+-edit hotel info
+
+
+
++ROOMS:
+
+-get by id
+-create room
+-delete room (deleted_at)
+-edit room info
+

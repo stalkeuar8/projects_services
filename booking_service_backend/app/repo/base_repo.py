@@ -20,37 +20,12 @@ T = TypeVar("T")
 class BaseRepo(Generic[T]):
     model: Type[T] | None = None
 
-    @classmethod
-    async def create(cls, session: AsyncSession, inserting_data_dto: BaseModel) -> T:
-
-        if cls.model:
-            new_obj = cls.model(**inserting_data_dto.model_dump())
-
-            session.add(new_obj)
-            await session.flush()
-
-            return new_obj
-
-        raise ValueError()
-
-    @classmethod
-    async def multi_create(cls, session: AsyncSession, inserting_data_list_dto: list[BaseModel]) -> Sequence[T]:
-
-        if cls.model:
-            new_objs = [cls.model(**obj_info.model_dump()) for obj_info in inserting_data_list_dto]
-
-            session.add_all(new_objs)
-            await session.flush()
-
-            return new_objs
-
-        raise ValueError()
 
     @classmethod
     async def find_by_id(cls, session: AsyncSession, id_to_find: int) -> T | None:
 
         if cls.model:
-            query = select(cls.model).where(cls.model.id==id_to_find, cls.model.deleted_at==None)
+            query = select(cls.model).where(cls.model.id == id_to_find, cls.model.deleted_at == None)
 
             result = await session.execute(query)
             found_obj = result.scalar()
@@ -59,60 +34,5 @@ class BaseRepo(Generic[T]):
 
         raise ValueError()
 
-    @classmethod
-    async def delete_by_id(cls, session: AsyncSession, id_to_delete: int) -> T | None:
 
-        if cls.model:
-            query = delete(cls.model).filter_by(id=id_to_delete).returning(cls.model)
-            result = await session.execute(query)
-            deleted_obj = result.scalar_one_or_none()
-
-            return deleted_obj
-
-        raise ValueError()
-
-    # @classmethod
-    # async def find_all(cls, session: AsyncSession, filters: dict[str, Any]) -> Sequence[T] | None:
-
-    #     if cls.model:
-    #         mapper: Mapper[Any] = cast(Mapper[Any], inspect(cls.model))
-    #         valid_columns = [column.key for column in mapper.attrs]
-
-    #         for key in filters:
-    #             if key not in valid_columns:
-    #                 raise ValueError(f"{cls.model} ERROR: param '{key}' does not exists in '{cls.model}' model")
-
-    #         query = select(cls.model).filter_by(**filters)
-
-    #         results = await session.execute(query)
-    #         found_objs = results.scalars().all()
-
-    #         if not found_objs:
-    #             return None
-
-    #         return found_objs
-
-    #     raise ValueError()
-
-    # @classmethod
-    # async def find_one_or_none(cls, session: AsyncSession, filters: dict[str, Any]) -> T:
-
-    #     if cls.model:
-    #         mapper: Mapper[Any] = cast(Mapper[Any], inspect(cls.model))
-    #         valid_columns = [column.key for column in mapper.attrs]
-
-    #         for key in filters:
-    #             if key not in valid_columns:
-    #                 raise ValueError(f"{cls.model} ERROR: param '{key}' does not exists in '{cls.model}' model")
-
-    #         query = select(cls.model).filter_by(**filters)
-
-    #         result = await session.execute(query)
-    #         found_obj = result.scalar_one_or_none()
-
-    #         if not found_obj:
-    #             raise ValueError("Object was not found")
-
-    #         return found_obj
-
-    #     raise ValueError()
+    

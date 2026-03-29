@@ -15,7 +15,6 @@ class UserLoginRequestSchema(BaseModel):
     password: str
     email: EmailStr | None = None
     phone_number: str | None = None
-    hashed_password: bytes = None
 
 
 class UserRegisterRequestSchema(UserBaseSchema):

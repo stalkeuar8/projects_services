@@ -4,7 +4,6 @@ from typing import Annotated, Any, Sequence
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.utils.response_parser import create_room_response
 from app.api.v1.bookings_router import booking_service
 from app.models.hotel import Rooms
 from app.repo.bookings_repo import BookingsRepo
@@ -12,6 +11,7 @@ from app.repo.rooms_repo import RoomsRepo
 from app.schemas.bookings_schemas import AvailabilityForBookingRequestSchema, AvailabilityForBookingResponseSchema
 from app.schemas.rooms_schemas import RoomCategory, RoomsCreateSchema, RoomSearchFilters, RoomsListResponseSchema, RoomsResponseSchema
 from app.settings.database import get_db
+from app.utils.response_parser import create_room_response
 
 rooms_router = APIRouter(prefix="/rooms", tags=["Rooms"])
 
@@ -50,5 +50,3 @@ async def check_room_availability(
         return AvailabilityForBookingResponseSchema(room_id=room_id, check_in=check_in, check_out=check_out, is_available=availability_result)
 
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Room with id {room_id} was not found")
-
-

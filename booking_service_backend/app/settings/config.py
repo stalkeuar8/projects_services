@@ -1,8 +1,9 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-class Settings(BaseSettings):
 
-    model_config = SettingsConfigDict(env_file=".env", extra='ignore')
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
 
 class DatabaseSettings(Settings):
     DB_USER: str
@@ -18,7 +19,6 @@ class DatabaseSettings(Settings):
 
 
 class JwtSettings(Settings):
-
     SECRET_KEY: str
 
     @property

@@ -1,7 +1,8 @@
 from typing import Self
 
-from pydantic import BaseModel, EmailStr, model_validator
+from pydantic import BaseModel, EmailStr, model_validator, Field
 
+from app.schemas.bookings_schemas import BookingsResponseSchema
 
 class UserBaseSchema(BaseModel):
     full_name: str
@@ -29,3 +30,14 @@ class UsersListResponseSchema(BaseModel):
             self.total = users_length
 
         return self
+
+
+class UserStatsResponseSchema(BaseModel):
+    users_bookings: list[BookingsResponseSchema]
+    total_orders_price: int = Field(ge=0)
+    total_bookings: int = Field(ge=0)
+    total_completed_bookings: int = Field(ge=0)
+    total_canceled_bookings: int = Field(ge=0)
+    total_checked_in_bookings: int = Field(ge=0)
+    total_booked_bookings: int = Field(ge=0)
+    total_pending_bookings: int = Field(ge=0)

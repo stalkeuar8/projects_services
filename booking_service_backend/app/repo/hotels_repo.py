@@ -1,11 +1,15 @@
 from typing import Any, Sequence
 
 from sqlalchemy import select, update
+from sqlalchemy.orm import contains_eager
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.hotel import Hotels
+from app.models.hotel import Rooms
+from app.models.booking import Bookings
 from app.repo.base_repo import BaseRepo
-from app.schemas.hotels_schemas import HotelSearchFilters, HotelEditSchema
+from app.repo.base_admin_repo import BaseAdminRepo
+from app.schemas.hotels_schemas import HotelEditSchema, HotelSearchFilters
 
 
 class HotelsRepo(BaseRepo[Hotels]):
@@ -14,7 +18,7 @@ class HotelsRepo(BaseRepo[Hotels]):
     @staticmethod
     async def find_hotel_by_filters(filters: HotelSearchFilters, session: AsyncSession) -> Sequence[Hotels] | None:
 
-        query = select(Hotels).where(Hotels.deleted_at==None)
+        query = select(Hotels).where(Hotels.deleted_at == None)
 
         if filters.country:
             query = query.where(Hotels.country == filters.country)
@@ -33,23 +37,25 @@ class HotelsRepo(BaseRepo[Hotels]):
 
         return rooms
 
+    
 
+
+class AdminHotelsRepo(BaseAdminRepo[Hotels]):
+    model = Hotels
 
     @staticmethod
-    async def edit_hotel_info(hotel_id: int, session: AsyncSession, info_to_edit: HotelEditSchema) -> Hotels | None:
-        query = (
-            update(Hotels).where(Hotels.id==hotel_id, Hotels.deleted_at==None)
-        )
+    async def admin_edit_hotel_info(hotel_id: int, session: AsyncSession, info_to_edit: HotelEditSchema) -> Hotels | None:
+        query = update(Hotels).where(Hotels.id == hotel_id, Hotels.deleted_at == None)
 
         if info_to_edit.country:
             query = query.values(country=info_to_edit.country)
-        
+
         if info_to_edit.city:
             query = query.values(city=info_to_edit.city)
 
         if info_to_edit.rating:
             query = query.values(rating=info_to_edit.rating)
-        
+
         if info_to_edit.name:
             query = query.values(name=info_to_edit.name)
 
@@ -57,3 +63,7 @@ class HotelsRepo(BaseRepo[Hotels]):
         edited_hotel = result.scalar()
 
         return edited_hotel
+    
+
+
+

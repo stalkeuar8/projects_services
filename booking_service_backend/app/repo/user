@@ -1,0 +1,24 @@
+BOOKINGS (ОКРЕМІ МЕТОДИ!):
+
+-create booking
+-cancel booking
+-get all user bookings by id
+
+
++USERS:
+
+-get user profile
+-get users bookings
+
+
+
++HOTELS:
+
+-get hotel by filters
+-get hotel by id
+
+
++ROOMS:
+
+-get room by filters
+-get room by id

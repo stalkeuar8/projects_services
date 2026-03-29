@@ -3,11 +3,11 @@ from typing import Annotated, Any, Sequence
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.utils.response_parser import create_hotel_response
 from app.models.hotel import Hotels
 from app.repo.hotels_repo import HotelsRepo
 from app.schemas.hotels_schemas import HotelsCreateSchema, HotelSearchFilters, HotelsListResponseSchema, HotelsResponseSchema
 from app.settings.database import get_db
+from app.utils.response_parser import create_hotel_response
 
 hotels_router = APIRouter(prefix="/hotels", tags=["Hotels"])
 
@@ -30,4 +30,3 @@ async def get_hotel_by_id(hotel_id: int, session: AsyncSession = Depends(get_db)
         return create_hotel_response(hotel_obj=hotel)
 
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Hotel with id {hotel_id} was not found")
-

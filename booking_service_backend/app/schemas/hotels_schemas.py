@@ -1,6 +1,8 @@
 from typing import Annotated, Self
 
 from pydantic import BaseModel, Field, model_validator
+from app.models.booking import Bookings
+
 
 RatingValid = Annotated[int, Field(ge=1, le=5)]
 
@@ -53,3 +55,4 @@ class HotelEditSchema(BaseModel):
     country: str | None = None
     city: str | None = None
     rating: RatingValid | None = None
+
