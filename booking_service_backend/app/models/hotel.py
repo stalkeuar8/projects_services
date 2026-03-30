@@ -17,7 +17,8 @@ class Hotels(Base):
     deleted_at: Mapped[datetime_utc_timezone] = mapped_column(default=None)
 
     rooms: Mapped[list["Rooms"]] = relationship(back_populates="hotel")
-    admin: Mapped["HotelAdmins"] = relationship(back_populates='hotel')
+    admin: Mapped["HotelAdmins"] = relationship(back_populates="hotel")
+
 
 class Rooms(Base):
     __tablename__ = "rooms"
@@ -41,4 +42,3 @@ class HotelAdmins(Base):
     chat_id: Mapped[str] = mapped_column(unique=True, default=None)
 
     hotel: Mapped["Hotels"] = relationship(back_populates="admin")
- 

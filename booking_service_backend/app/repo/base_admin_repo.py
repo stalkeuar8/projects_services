@@ -1,6 +1,5 @@
-from typing import Any, Generic, Sequence, Type, TypeVar, cast
-
 from datetime import datetime, timezone
+from typing import Any, Generic, Sequence, Type, TypeVar, cast
 
 from pydantic import BaseModel
 from sqlalchemy import ColumnElement, delete, inspect, select, update
@@ -29,7 +28,6 @@ class BaseAdminRepo(Generic[T]):
 
         raise ValueError()
 
-
     @classmethod
     async def multi_create(cls, session: AsyncSession, inserting_data_list_dto: list[BaseModel]) -> Sequence[T]:
 
@@ -42,7 +40,6 @@ class BaseAdminRepo(Generic[T]):
             return new_objs
 
         raise ValueError()
-
 
     @classmethod
     async def admin_find_by_id(cls, session: AsyncSession, id_to_find: int) -> T | None:
@@ -57,20 +54,14 @@ class BaseAdminRepo(Generic[T]):
 
         raise ValueError()
 
-
     @classmethod
     async def admin_delete_by_id(cls, session: AsyncSession, id_to_delete: int) -> T | None:
 
         current_time = datetime.now(tz=timezone.utc)
 
         if cls.model:
-            query = (
-                update(cls.model)
-                .where(cls.model.id==id_to_delete)
-                .values(deleted_at=current_time)
-                .returning(cls.model)
-            )
-            
+            query = update(cls.model).where(cls.model.id == id_to_delete).values(deleted_at=current_time).returning(cls.model)
+
             result = await session.execute(query)
             deleted_obj = result.scalar_one_or_none()
 

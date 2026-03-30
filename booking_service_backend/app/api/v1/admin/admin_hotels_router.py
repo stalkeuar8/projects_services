@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.jwt_gen import get_current_admin_user
 from app.models.hotel import Hotels
-from app.repo.hotels_repo import HotelsRepo, AdminHotelsRepo
+from app.repo.hotels_repo import AdminHotelsRepo, HotelsRepo
 from app.schemas.hotels_schemas import HotelEditSchema, HotelsCreateSchema, HotelSearchFilters, HotelsListResponseSchema, HotelsResponseSchema
 from app.settings.database import get_db
 from app.utils.response_parser import create_hotel_response
@@ -13,7 +13,7 @@ from app.utils.response_parser import create_hotel_response
 admin_hotels_router = APIRouter(prefix="/admin/hotels", tags=["Admin"], dependencies=[Depends(get_current_admin_user)])
 
 
-@admin_hotels_router.get('/{hotel_id}', summary='Get hotel by id (Admin)', response_model=HotelsResponseSchema)
+@admin_hotels_router.get("/{hotel_id}", summary="Get hotel by id (Admin)", response_model=HotelsResponseSchema)
 async def admin_get_hotel_by_id(hotel_id: int, session: AsyncSession = Depends(get_db)) -> HotelsResponseSchema | None:
     hotel: Hotels | None = await AdminHotelsRepo.admin_find_by_id(id_to_find=hotel_id, session=session)
 
@@ -51,5 +51,3 @@ async def edit_hotel_info(hotel_id: int, body: HotelEditSchema, session: AsyncSe
         return create_hotel_response(edited_hotel)
 
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Hotel with id {hotel_id} was not found")
-
-

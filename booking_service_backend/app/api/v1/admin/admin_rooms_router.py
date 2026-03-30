@@ -8,7 +8,7 @@ from app.api.v1.bookings_router import booking_service
 from app.auth.jwt_gen import get_current_admin_user
 from app.models.hotel import Rooms
 from app.repo.bookings_repo import BookingsRepo
-from app.repo.rooms_repo import RoomsRepo, AdminRoomsRepo
+from app.repo.rooms_repo import AdminRoomsRepo, RoomsRepo
 from app.schemas.bookings_schemas import AvailabilityForBookingRequestSchema, AvailabilityForBookingResponseSchema
 from app.schemas.rooms_schemas import RoomCategory, RoomEditSchema, RoomsCreateSchema, RoomSearchFilters, RoomsListResponseSchema, RoomsResponseSchema
 from app.settings.database import get_db
@@ -17,7 +17,7 @@ from app.utils.response_parser import create_room_response
 admin_rooms_router = APIRouter(prefix="/admin/rooms", tags=["Admin"], dependencies=[Depends(get_current_admin_user)])
 
 
-@admin_rooms_router.get('/{hotel_id}', summary='Get room by id (Admin)', response_model=RoomsResponseSchema)
+@admin_rooms_router.get("/{hotel_id}", summary="Get room by id (Admin)", response_model=RoomsResponseSchema)
 async def admin_get_room_by_id(hotel_id: int, session: AsyncSession = Depends(get_db)) -> RoomsResponseSchema | None:
     hotel: Rooms | None = await AdminRoomsRepo.admin_find_by_id(id_to_find=hotel_id, session=session)
 

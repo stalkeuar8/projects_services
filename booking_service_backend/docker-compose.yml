@@ -26,7 +26,21 @@ services:
       - "6379:6379"
     networks:
       - booking_network
-
+  migrations:
+    build: .
+    command: alembic upgrade head
+    volumes:
+      - .:/app
+    depends_on:
+      - postgres
+    networks:
+      - booking_network
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=${DB_PORT}
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASS}
+      - DB_NAME=${DB_NAME}
   app:
     build: 
       context: .
@@ -50,13 +64,20 @@ services:
   bot:
     build: .
     command: python app/bot/bot_main.py
+    restart: always
     depends_on:
-      - postgres
-      - app
+      postgres:
+          condition: service_healthy
+      app:
+          condition: service_started
     env_file:
       - .env
     environment:
       - PYTHONPATH=/app
+    networks:
+      - booking_network
+    volumes:
+      - .:/app
 networks:
   booking_network:
     driver: bridge

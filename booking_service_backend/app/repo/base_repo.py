@@ -20,7 +20,6 @@ T = TypeVar("T")
 class BaseRepo(Generic[T]):
     model: Type[T] | None = None
 
-
     @classmethod
     async def find_by_id(cls, session: AsyncSession, id_to_find: int) -> T | None:
 
@@ -33,6 +32,3 @@ class BaseRepo(Generic[T]):
             return found_obj
 
         raise ValueError()
-
-
-    

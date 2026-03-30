@@ -5,8 +5,8 @@ from typing import Annotated, Self
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.models.booking import Bookings
-from app.schemas.hotels_schemas import RatingValid
 from app.schemas.bookings_schemas import BookingsResponseSchema
+from app.schemas.hotels_schemas import RatingValid
 
 CapacityValid = Annotated[int, Field(ge=1, le=3)]
 PriceValid = Annotated[int, Field(ge=0)]

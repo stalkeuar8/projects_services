@@ -6,8 +6,8 @@ from sqlalchemy.orm import contains_eager
 
 from app.models.booking import Bookings
 from app.models.hotel import Hotels, Rooms
-from app.repo.base_repo import BaseRepo
 from app.repo.base_admin_repo import BaseAdminRepo
+from app.repo.base_repo import BaseRepo
 from app.schemas.rooms_schemas import RoomEditSchema, RoomSearchFilters
 
 
@@ -74,7 +74,6 @@ class RoomsRepo(BaseRepo[Rooms]):
         return rooms
 
 
-
 class AdminRoomsRepo(BaseAdminRepo[Rooms]):
     model = Rooms
 
@@ -98,4 +97,3 @@ class AdminRoomsRepo(BaseAdminRepo[Rooms]):
         edited_room = result.scalar()
 
         return edited_room
-    

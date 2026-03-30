@@ -21,6 +21,7 @@ booking_service = BookingService()
 
 bookings_router = APIRouter(prefix="/bookings", tags=["Bookings"])
 
+
 @bookings_router.post("/", summary="Create booking (Only logined users)", response_model=BookingsResponseSchema)
 async def create_booking(
     body: BookingsPreparationSchema, session: AsyncSession = Depends(get_db), current_user: Users = Depends(get_current_user)
@@ -61,17 +62,19 @@ async def get_booking_by_id(
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Booking with id {booking_id} was not found")
 
 
-
-
-
 @bookings_router.patch("/{booking_id}/cancel", summary="Cancel user booking by id (Only logined users)", response_model=BookingsResponseSchema)
-async def cancel_booking_by_id(booking_id: int, current_user: Users = Depends(get_current_user), session: AsyncSession = Depends(get_db)) -> BookingsResponseSchema:
-    canceled_booking: Bookings | None = await BookingsRepo.cancel_my_booking_by_id(booking_id=booking_id, session=session, current_user_id=current_user.id)
+async def cancel_booking_by_id(
+    booking_id: int, current_user: Users = Depends(get_current_user), session: AsyncSession = Depends(get_db)
+) -> BookingsResponseSchema:
+    canceled_booking: Bookings | None = await BookingsRepo.cancel_my_booking_by_id(
+        booking_id=booking_id, session=session, current_user_id=current_user.id
+    )
 
     if canceled_booking:
         return create_booking_response(booking_obj=canceled_booking)
-    
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Booking with id {booking_id} was not found") 
+
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Booking with id {booking_id} was not found")
+
 
 # # THINK ABOUT!!!
 # @bookings_router.get("/{room_id}/available", summary="Check room availability", response_model=AvailabilityForBookingRequestSchema)

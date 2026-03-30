@@ -1,8 +1,9 @@
 from typing import Self
 
-from pydantic import BaseModel, EmailStr, model_validator, Field
+from pydantic import BaseModel, EmailStr, Field, model_validator
 
 from app.schemas.bookings_schemas import BookingsResponseSchema
+
 
 class UserBaseSchema(BaseModel):
     full_name: str

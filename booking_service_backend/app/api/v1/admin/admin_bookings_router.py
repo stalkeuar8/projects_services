@@ -11,9 +11,9 @@ from app.schemas.bookings_schemas import (
     AvailabilityForBookingResponseSchema,
     BookingsPreparationSchema,
     BookingsResponseSchema,
-    ChangeBookingStatusSchema,
+    BookingsStatsRequestSchema,
     BookingStatsResponseSchema,
-    BookingsStatsRequestSchema
+    ChangeBookingStatusSchema,
 )
 from app.services.booking_service import BookingService
 from app.settings.database import get_db
@@ -35,7 +35,9 @@ async def admin_get_booking_by_id(booking_id: int, session: AsyncSession = Depen
 
 
 @admin_bookings_router.patch("/{booking_id}/status", summary="Change booking status (Admin)", response_model=BookingsResponseSchema)
-async def admin_change_booking_status(booking_id: int, new_status: str = Query(), session: AsyncSession = Depends(get_db)) -> BookingsResponseSchema | None:
+async def admin_change_booking_status(
+    booking_id: int, new_status: str = Query(), session: AsyncSession = Depends(get_db)
+) -> BookingsResponseSchema | None:
     booking: Bookings | None = await AdminBookingsRepo.admin_change_booking_status(booking_id=booking_id, new_status=new_status, session=session)
 
     if booking:
@@ -54,11 +56,15 @@ async def admin_delete_booking_by_id(booking_id: int, session: AsyncSession = De
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Booking with id {booking_id} was not found")
 
 
-@admin_bookings_router.get("/stats", summary="Get bookings start by period, rooms, hotels (Admin)", tags=['Admin Analytics'], response_model=BookingStatsResponseSchema)
-async def get_booking_stats(filters: Annotated[BookingsStatsRequestSchema, Query()], session: AsyncSession = Depends(get_db)) -> BookingStatsResponseSchema:
+@admin_bookings_router.get(
+    "/stats", summary="Get bookings start by period, rooms, hotels (Admin)", tags=["Admin Analytics"], response_model=BookingStatsResponseSchema
+)
+async def get_booking_stats(
+    filters: Annotated[BookingsStatsRequestSchema, Query()], session: AsyncSession = Depends(get_db)
+) -> BookingStatsResponseSchema:
     bookings_stats: BookingsResponseSchema | None = await AdminBookingsRepo.admin_get_bookings_stats(filters=filters, session=session)
 
     if bookings_stats:
         return bookings_stats
-    
+
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Nothing found by filters")

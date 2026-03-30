@@ -70,21 +70,20 @@ class BookingsStatsRequestSchema(BaseModel):
     hotel_id: int | None
 
     @classmethod
-    @field_validator('created_after', 'created_before', mode='after')
+    @field_validator("created_after", "created_before", mode="after")
     def validate_timezone(cls, value: datetime) -> datetime:
         if value:
             if value.tzinfo is None:
                 return value.replace(tzinfo=timezone.utc)
-            
-            return value.astimezone(timezone.utc)
-    
 
-    @model_validator(mode='after')
+            return value.astimezone(timezone.utc)
+
+    @model_validator(mode="after")
     def validate_model(self) -> Self:
         if self.created_after and self.created_before:
             if self.created_after >= self.created_before:
                 raise ValueError("Created after must be less than created before!")
-            
+
         if self.created_before or self.created_after:
             if self.created_after >= datetime.now(tz=timezone.utc) or self.created_before >= datetime.now(tz=timezone.utc):
                 raise ValueError("Created after AND created before must be less than now!")

@@ -1,8 +1,8 @@
+import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import jwt
-import uuid
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession

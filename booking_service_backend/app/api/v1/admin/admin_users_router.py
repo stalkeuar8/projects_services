@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.jwt_gen import get_current_admin_user, get_current_user
 from app.models.user import Users
-from app.repo.users_repo import UsersRepo, AdminUsersRepo
+from app.repo.users_repo import AdminUsersRepo, UsersRepo
 from app.schemas.users_schemas import UsersCreateSchema, UsersListResponseSchema, UsersResponseSchema, UserStatsResponseSchema
 from app.settings.database import get_db
 from app.utils.response_parser import create_user_response
@@ -47,7 +47,7 @@ async def admin_get_user_by_id(user_id: int, session: AsyncSession = Depends(get
 async def admin_get_user_stats(user_id: int, session: AsyncSession = Depends(get_db)) -> UserStatsResponseSchema:
     users_stats: UserStatsResponseSchema | None = await AdminUsersRepo.admin_get_users_stats(user_id=user_id, session=session)
 
-    if users_stats: 
+    if users_stats:
         return users_stats
-    
+
     raise HTTPException(status_code=404, detail=f"User with id {user_id} was not found")
