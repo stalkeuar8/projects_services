@@ -62,23 +62,42 @@ services:
     volumes:
       - .:/app
 
+
   bot:
     build: .
-    command: python app/bot/bot_main.py
+    command: watchfiles --ignore-paths "__pycache__" "python app/bot/bot_main.py" ./app
     restart: always
+    expose:
+      - "${BOT_PORT}"
     depends_on:
       postgres:
-          condition: service_healthy
+        condition: service_healthy
       app:
-          condition: service_started
+        condition: service_started
     env_file:
       - .env
     environment:
       - PYTHONPATH=/app
+      - BOT_PORT=${BOT_PORT}
     networks:
       - booking_network
     volumes:
       - .:/app
+
+  ngrok:
+    image: ngrok/ngrok:latest
+    restart: always
+    environment:
+      - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
+    command:
+      - "http"
+      - "bot:${BOT_PORT}"
+    networks:
+      - booking_network
+    ports:
+      - "4040:4040"
+    depends_on:
+      - bot
 networks:
   booking_network:
     driver: bridge

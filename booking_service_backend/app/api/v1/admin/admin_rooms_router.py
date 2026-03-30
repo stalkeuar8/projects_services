@@ -4,7 +4,7 @@ from typing import Annotated, Any, Sequence
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.v1.bookings_router import booking_service
+from app.api.v1.user.bookings_router import booking_service
 from app.auth.jwt_gen import get_current_admin_user
 from app.models.hotel import Rooms
 from app.repo.bookings_repo import BookingsRepo
@@ -33,6 +33,16 @@ async def admin_create_room(body: RoomsCreateSchema, session: AsyncSession = Dep
 
     if new_room:
         return create_room_response(room_obj=new_room)
+
+    raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Client not created, Back-end error.")
+
+
+@admin_rooms_router.post("/massive", summary="Multi create room (Admin)", response_model=list[RoomsResponseSchema])
+async def admin_multi_create_room(body: list[RoomsCreateSchema], session: AsyncSession = Depends(get_db)) -> list[RoomsResponseSchema]:
+    new_rooms: Rooms | None = await AdminRoomsRepo.multi_create(session=session, inserting_data_list_dto=body)
+
+    if new_rooms:
+        return new_rooms
 
     raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Client not created, Back-end error.")
 

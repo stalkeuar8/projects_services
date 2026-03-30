@@ -1,6 +1,6 @@
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.jwt_gen import get_current_user
@@ -16,7 +16,7 @@ from app.schemas.bookings_schemas import (
 from app.services.booking_service import BookingService
 from app.settings.database import get_db
 from app.utils.response_parser import create_booking_response
-
+from app.api.v1.requests import send_approving_request
 booking_service = BookingService()
 
 bookings_router = APIRouter(prefix="/bookings", tags=["Bookings"])
@@ -24,18 +24,22 @@ bookings_router = APIRouter(prefix="/bookings", tags=["Bookings"])
 
 @bookings_router.post("/", summary="Create booking (Only logined users)", response_model=BookingsResponseSchema)
 async def create_booking(
-    body: BookingsPreparationSchema, session: AsyncSession = Depends(get_db), current_user: Users = Depends(get_current_user)
+    body: BookingsPreparationSchema, background_tasks:  BackgroundTasks, session: AsyncSession = Depends(get_db), current_user: Users = Depends(get_current_user)
 ) -> BookingsResponseSchema:
     new_booking: Bookings | None = await booking_service.new_booking(user_id=current_user.id, dto=body, session=session)
 
     if new_booking:
-        return BookingsResponseSchema(
+        booking_obj = BookingsResponseSchema(
             **body.model_dump(),
             user_id=current_user.id,
             id=new_booking.id,
             created_at=new_booking.created_at,
             total_price=new_booking.total_price,
         )
+
+        background_tasks.add_task(send_approving_request, booking_obj)
+
+        return booking_obj
 
     raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Room is not available for dates {body.check_in}-{body.check_out}")
 

@@ -23,6 +23,7 @@ async def admin_create_user(body: UsersCreateSchema, session: AsyncSession = Dep
     raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="User not created, Back-end error.")
 
 
+
 @admin_users_router.delete("/{user_id}", summary="Delete user by id (Admin)", response_model=UsersResponseSchema)
 async def admin_delete_user(user_id: int, session: AsyncSession = Depends(get_db)) -> UsersResponseSchema:
     deleted_user: Users | None = await AdminUsersRepo.admin_delete_by_id(id_to_delete=user_id, session=session)

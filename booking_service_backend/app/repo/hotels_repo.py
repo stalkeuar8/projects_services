@@ -96,6 +96,7 @@ class AdminHotelsRepo(BaseAdminRepo[Hotels]):
         return edited_hotel
 
 
+
 class AdminBotHotelRepo:
     @staticmethod
     async def bot_login(session: AsyncSession, login_info: HotelLoginSchema) -> HotelAdmins | None:
@@ -107,6 +108,16 @@ class AdminBotHotelRepo:
         return updated_info
 
     @staticmethod
+    async def bot_logout(session: AsyncSession, hotel_id: int) -> HotelAdmins | None:
+        query = update(HotelAdmins).where(HotelAdmins.hotel_id == hotel_id).values(chat_id=None).returning(HotelAdmins)
+
+        result = await session.execute(query)
+        updated_info = result.scalar()
+
+        return updated_info
+
+
+    @staticmethod
     async def get_hotel_admin_info(hotel_id: int, session: AsyncSession) -> HotelAdmins | None:
         query = select(HotelAdmins).where(HotelAdmins.hotel_id == hotel_id).with_for_update(nowait=True)
 
@@ -114,3 +125,17 @@ class AdminBotHotelRepo:
         hotel = result.scalar()
 
         return hotel
+    
+
+    @staticmethod
+    async def get_hotel_info_by_chat_id(chat_id: str, session: AsyncSession) -> HotelAdmins | None:
+        query = select(HotelAdmins).where(HotelAdmins.chat_id==chat_id).with_for_update(nowait=True)
+
+        result = await session.execute(query)
+        hotel = result.scalar()
+
+        if hotel:
+            return hotel
+
+        return None
+

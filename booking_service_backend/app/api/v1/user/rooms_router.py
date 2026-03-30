@@ -4,7 +4,7 @@ from typing import Annotated, Any, Sequence
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.v1.bookings_router import booking_service
+from app.api.v1.user.bookings_router import booking_service
 from app.models.hotel import Rooms
 from app.repo.bookings_repo import BookingsRepo
 from app.repo.rooms_repo import RoomsRepo

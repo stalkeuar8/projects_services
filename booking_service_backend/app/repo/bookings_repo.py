@@ -1,4 +1,5 @@
 import datetime
+from typing import Sequence
 
 from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -109,11 +110,24 @@ class AdminBookingsRepo:
         return booking
 
     @staticmethod
-    async def admin_find_by_hotel_id(hotel_id: int, session: AsyncSession) -> Bookings | None:
-        query = select(Bookings).join(Bookings.room).where(Rooms.hotel_id == hotel_id).options(contains_eager(Bookings.room))
-        result = await session.execute(query)
-        booking = result.scalar_one_or_none()
-        return booking
+    async def admin_find_by_hotel_id(hotel_id: int, session: AsyncSession, limit: int = 10) -> Sequence[Bookings] | None:
+        query = (
+            select(Bookings)
+            .join(Bookings.room)
+            .where(Bookings.status != "canceled")
+            .where(Rooms.hotel_id == hotel_id)
+            .options(contains_eager(Bookings.room))
+            .order_by(Bookings.created_at.desc())
+            .limit(limit)
+        )
+
+        results = await session.execute(query)
+        bookings = results.scalars().all()
+
+        if bookings:
+            return bookings
+        
+        return None
 
     @staticmethod
     async def admin_change_booking_status(booking_id: int, new_status: str, session: AsyncSession) -> Bookings | None:
