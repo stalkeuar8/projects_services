@@ -9,9 +9,9 @@ from app.models.base import Base
 from app.settings.database import async_engine, async_session_factory
 
 
-async def create_tables() -> None:
-    async with async_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+# async def create_tables() -> None:
+#     async with async_engine.begin() as conn:
+#         await conn.run_sync(Base.metadata.create_all)
 
 
 T = TypeVar("T")

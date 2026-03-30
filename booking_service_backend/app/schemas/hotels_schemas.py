@@ -29,6 +29,12 @@ class HotelsCreateSchema(BaseModel):
     rating: RatingValid
 
 
+class HotelsCreateListSchema(BaseModel):
+    hotels_list: list[HotelsCreateSchema]
+
+class HotelsCreateListResponseSchema(BaseModel):
+    hotels_list: list[HotelsCreateSchema]
+
 class HotelsListResponseSchema(BaseModel):
     hotels: list[HotelsResponseSchema]
     total: int | None

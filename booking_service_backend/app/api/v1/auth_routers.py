@@ -32,7 +32,7 @@ async def login(body: UserLoginRequestSchema, session: AsyncSession = Depends(ge
     if user:
         if bcrypt.checkpw(body.password.encode("utf-8"), user.hashed_password):
             jwt_token = create_access_token(user_id=user.id)
-
+        
             return UserAuthResponseSchema(
                 email=user.email,
                 phone_number=user.phone_number,

@@ -39,6 +39,6 @@ class HotelAdmins(Base):
     row_id: Mapped[id_primary_key]
     hotel_id: Mapped[not_null_int] = mapped_column(ForeignKey("hotels.id", ondelete="RESTRICT", onupdate="RESTRICT"), unique=True)
     bot_hashed_password: Mapped[bytes] = mapped_column(nullable=False)
-    chat_id: Mapped[str] = mapped_column(unique=True, default=None)
+    chat_id: Mapped[str] = mapped_column(unique=True, default=None, nullable=True)
 
     hotel: Mapped["Hotels"] = relationship(back_populates="admin")

@@ -15,7 +15,9 @@ class DatabaseSettings(Settings):
     @property
     def DATABASE_async_url(self) -> str:
         url = f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASS}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+        print(url)
         return url
+
 
 
 class JwtSettings(Settings):

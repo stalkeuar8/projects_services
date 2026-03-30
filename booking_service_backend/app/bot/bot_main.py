@@ -1,11 +1,11 @@
 import asyncio
+import logging
 
 from aiogram import Bot, Dispatcher
 
-from app.settings.config import bot_settings
 from app.bot.handlers.commands import commands_router
+from app.settings.config import bot_settings
 
-import logging
 
 async def main():
     logging.basicConfig(level=logging.INFO)
@@ -20,4 +20,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-

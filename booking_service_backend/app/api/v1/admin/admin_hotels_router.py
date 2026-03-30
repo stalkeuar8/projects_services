@@ -1,4 +1,4 @@
-from typing import Annotated, Any
+from typing import Annotated, Any, Sequence
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.jwt_gen import get_current_admin_user
 from app.models.hotel import Hotels
 from app.repo.hotels_repo import AdminHotelsRepo, HotelsRepo
-from app.schemas.hotels_schemas import HotelEditSchema, HotelsCreateSchema, HotelSearchFilters, HotelsListResponseSchema, HotelsResponseSchema
+from app.schemas.hotels_schemas import HotelsCreateListResponseSchema, HotelEditSchema, HotelsCreateSchema, HotelSearchFilters, HotelsListResponseSchema, HotelsResponseSchema, HotelsCreateListSchema
 from app.settings.database import get_db
 from app.utils.response_parser import create_hotel_response
 
@@ -29,6 +29,16 @@ async def admin_create_hotel(body: HotelsCreateSchema, session: AsyncSession = D
 
     if new_hotel:
         return create_hotel_response(hotel_obj=new_hotel)
+
+    raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Hotel not created, Back-end error.")
+
+
+@admin_hotels_router.post("/massive", summary="Multi create hotel (Admin)", response_model=HotelsCreateListResponseSchema)
+async def admin_massive_create_hotel(body: HotelsCreateListSchema, session: AsyncSession = Depends(get_db)) -> HotelsCreateListResponseSchema:
+    new_hotels: Sequence[Hotels] | None = await AdminHotelsRepo.multi_create(session=session, inserting_data_list_dto=body)
+
+    if new_hotels:
+        return new_hotels
 
     raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Hotel not created, Back-end error.")
 

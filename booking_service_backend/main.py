@@ -17,7 +17,6 @@ from app.api.v1.hotels_router import hotels_router
 from app.api.v1.rooms_router import rooms_router
 from app.api.v1.users_router import users_router
 from app.models.hotel import Rooms
-from app.repo.base_repo import create_tables
 from app.services.background_processes import BackgroundProcesses
 from app.services.booking_service import BookingService
 from app.settings.database import async_engine, async_session_factory
