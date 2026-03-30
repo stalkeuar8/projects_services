@@ -68,6 +68,7 @@ class BookingsRepo:
                 Bookings.status != "canceled",
                 Bookings.check_in < check_out,
                 Bookings.check_out > check_in,
+                Bookings.room_id == room_id
             )
             .order_by(Bookings.id.desc())
             .with_for_update(nowait=True)

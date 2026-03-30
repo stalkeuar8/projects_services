@@ -21,8 +21,8 @@ async def handle_external_request(request: web.Request) -> None:
 
         data = BookingApproveProcessSchema(**body)
         hotel_id = data.hotel_id
-        
-        with async_session_factory.begin() as session:
+
+        async with async_session_factory.begin() as session:
             logined_admin_info: HotelAdmins | None = await AdminBotHotelRepo.get_hotel_admin_info(hotel_id=hotel_id, session=session)
 
             if logined_admin_info:
@@ -35,12 +35,13 @@ async def handle_external_request(request: web.Request) -> None:
                 )
 
                 # message_to_send = f"New booking request! 🏡\n\nRoom ID: {data.booking_info.room_id}\nCheck in date: {datetime.date(data.booking_info.check_in)}\nCheck out date: {datetime.date(data.booking_info.check_out)}\n\nTotal price: {data.booking_info.total_price} 💲\nCreated at: {data.booking_info.created_at} ⌛"
-                bot.send_message(chat_id=chat_id, text=message_to_send)
-
+                await bot.send_message(chat_id=chat_id, text=message_to_send)
+                return web.Response(status=200, text="OK")
+            
             else:
                 return web.Response(status=status.HTTP_401_UNAUTHORIZED, text="Hotel is not authorized, booking can not be accepted")
 
-    except Exception:
-        return web.Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR, text=f"Internal server ERROR")
+    except Exception as e:
+        return web.Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR, text=f"Internal server ERROR: {e}")
 
 

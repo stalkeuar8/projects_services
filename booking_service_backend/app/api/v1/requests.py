@@ -9,7 +9,7 @@ from app.repo.rooms_repo import AdminRoomsRepo
 from app.models.hotel import Rooms
 
 async def send_approving_request(booking_info: BookingsResponseSchema):
-    url = "https://2941-195-211-138-69.ngrok-free.app"
+    url = "https://2941-195-211-138-69.ngrok-free.app/external-data"
 
     async with async_session_factory.begin() as session:
         room_info: Rooms = await AdminRoomsRepo.admin_find_by_id(id_to_find=booking_info.room_id, session=session)
