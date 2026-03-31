@@ -1,15 +1,15 @@
 from datetime import datetime, timezone
-from typing import Annotated, Any, Sequence
+from typing import Any
 
 import bcrypt
 import redis.asyncio as redis
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.jwt_gen import create_access_token, decode_jwt, oauth2_scheme
 from app.models.user import Users
-from app.repo.users_repo import AdminUsersRepo, UsersRepo
+from app.repo.users_repo import AdminUsersRepo
 from app.schemas.auth.users_auth_schemas import (
     RefreshTokenRequestSchema,
     RefreshTokenResponseSchema,

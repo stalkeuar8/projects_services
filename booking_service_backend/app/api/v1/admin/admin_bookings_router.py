@@ -1,19 +1,15 @@
-from typing import Annotated, Any
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.jwt_gen import get_current_admin_user, get_current_user
+from app.auth.jwt_gen import get_current_admin_user
 from app.models.booking import Bookings
 from app.repo.bookings_repo import AdminBookingsRepo
 from app.schemas.bookings_schemas import (
-    AvailabilityForBookingRequestSchema,
-    AvailabilityForBookingResponseSchema,
-    BookingsPreparationSchema,
     BookingsResponseSchema,
     BookingsStatsRequestSchema,
-    BookingStatsResponseSchema,
-    ChangeBookingStatusSchema,
+    BookingStatsResponseSchema
 )
 from app.services.booking_service import BookingService
 from app.settings.database import get_db

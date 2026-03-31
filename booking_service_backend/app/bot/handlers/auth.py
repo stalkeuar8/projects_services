@@ -1,14 +1,14 @@
 from typing import Any
 
 import bcrypt
-from aiogram import F, Router, types
+from aiogram import Router, types
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 
 from app.bot.fsm.login_state import LoginState
 from app.models.hotel import HotelAdmins
 from app.repo.hotels_repo import AdminBotHotelRepo
-from app.schemas.auth.hotel_bot_schemas import HotelLoginSchema, HotelPasswordSchema
+from app.schemas.auth.hotel_bot_schemas import HotelLoginSchema
 from app.settings.database import async_session_factory
 
 auth_router = Router()

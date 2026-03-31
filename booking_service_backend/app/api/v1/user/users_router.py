@@ -1,12 +1,10 @@
-from typing import Annotated, Any, Sequence
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.jwt_gen import get_current_user
 from app.models.user import Users
-from app.repo.users_repo import UsersRepo
-from app.schemas.users_schemas import UsersCreateSchema, UsersResponseSchema
+from app.schemas.users_schemas import UsersResponseSchema
 from app.settings.database import get_db
 from app.utils.response_parser import create_user_response
 

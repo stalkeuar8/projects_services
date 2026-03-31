@@ -1,7 +1,6 @@
 from typing import Sequence
-from datetime import datetime, timezone, timedelta
 
-from aiogram import F, Router, types
+from aiogram import Router, types
 from aiogram.filters import Command, CommandObject
 
 from app.models.booking import Bookings
@@ -10,7 +9,7 @@ from app.repo.hotels_repo import AdminBotHotelRepo
 from app.settings.database import async_session_factory
 from app.models.hotel import HotelAdmins
 
-from app.bot.keyboard.inline_buttons import ApprovingResCB, generate_approving_inline_buttons
+from app.bot.keyboard.inline_buttons import generate_approving_inline_buttons
 
 commands_router = Router()
 

@@ -1,4 +1,3 @@
-import asyncio
 import datetime
 
 from sqlalchemy import delete, update

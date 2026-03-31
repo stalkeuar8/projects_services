@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Annotated, Any, Sequence
+from typing import Annotated, Sequence
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -8,8 +8,8 @@ from app.api.v1.user.bookings_router import booking_service
 from app.models.hotel import Rooms
 from app.repo.bookings_repo import BookingsRepo
 from app.repo.rooms_repo import RoomsRepo
-from app.schemas.bookings_schemas import AvailabilityForBookingRequestSchema, AvailabilityForBookingResponseSchema
-from app.schemas.rooms_schemas import RoomCategory, RoomsCreateSchema, RoomSearchFilters, RoomsListResponseSchema, RoomsResponseSchema
+from app.schemas.bookings_schemas import AvailabilityForBookingResponseSchema
+from app.schemas.rooms_schemas import RoomSearchFilters, RoomsListResponseSchema, RoomsResponseSchema
 from app.settings.database import get_db
 from app.utils.response_parser import create_room_response
 

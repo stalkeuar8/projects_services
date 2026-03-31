@@ -1,19 +1,17 @@
-from typing import Annotated, Any, Sequence
+from typing import Sequence
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.jwt_gen import get_current_admin_user
 from app.models.hotel import Hotels
-from app.repo.hotels_repo import AdminHotelsRepo, HotelsRepo
+from app.repo.hotels_repo import AdminHotelsRepo
 from app.schemas.hotels_schemas import (
     HotelEditSchema,
     HotelsCreateListResponseSchema,
     HotelsCreateListSchema,
     HotelsCreateSchema,
-    HotelSearchFilters,
-    HotelsListResponseSchema,
-    HotelsResponseSchema,
+    HotelsResponseSchema
 )
 from app.settings.database import get_db
 from app.utils.response_parser import create_hotel_response

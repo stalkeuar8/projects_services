@@ -1,13 +1,11 @@
-import asyncio
 
 import aiohttp
-from fastapi import HTTPException, status
 from fastapi.encoders import jsonable_encoder
 
 from app.models.hotel import Rooms
 from app.repo.rooms_repo import AdminRoomsRepo
 from app.schemas.bookings_schemas import BookingsResponseSchema
-from app.schemas.bot_schemas import BookingApproveRequestSchema, BookingApproveResponseSchema
+from app.schemas.bot_schemas import BookingApproveRequestSchema
 from app.settings.database import async_session_factory
 
 

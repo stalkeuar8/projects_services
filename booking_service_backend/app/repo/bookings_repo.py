@@ -3,7 +3,7 @@ from typing import Sequence
 
 from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import contains_eager, selectinload
+from sqlalchemy.orm import contains_eager
 
 from app.models.booking import Bookings
 from app.models.hotel import Rooms

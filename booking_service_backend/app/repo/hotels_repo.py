@@ -1,12 +1,10 @@
-from typing import Any, Sequence
+from typing import Sequence
 
 import bcrypt
 from pydantic import BaseModel
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import contains_eager
 
-from app.models.booking import Bookings
 from app.models.hotel import HotelAdmins, Hotels
 from app.repo.base_admin_repo import BaseAdminRepo
 from app.repo.base_repo import BaseRepo

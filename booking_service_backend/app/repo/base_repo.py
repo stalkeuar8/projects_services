@@ -1,16 +1,9 @@
-from typing import Any, Generic, Sequence, Type, TypeVar, cast
+from typing import Generic, Type, TypeVar
 
-from pydantic import BaseModel
-from sqlalchemy import ColumnElement, delete, inspect, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Mapper
 
-from app.models.base import Base
-from app.settings.database import async_engine, async_session_factory
-
-# async def create_tables() -> None:
-#     async with async_engine.begin() as conn:
-#         await conn.run_sync(Base.metadata.create_all)
+from app.settings.database import async_session_factory
 
 
 T = TypeVar("T")

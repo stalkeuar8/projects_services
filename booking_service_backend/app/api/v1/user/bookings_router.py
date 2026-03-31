@@ -1,6 +1,5 @@
-from typing import Annotated, Any
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.requests import send_approving_request
@@ -9,8 +8,6 @@ from app.models.booking import Bookings
 from app.models.user import Users
 from app.repo.bookings_repo import BookingsRepo
 from app.schemas.bookings_schemas import (
-    AvailabilityForBookingRequestSchema,
-    AvailabilityForBookingResponseSchema,
     BookingsPreparationSchema,
     BookingsResponseSchema,
 )

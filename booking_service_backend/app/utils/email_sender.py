@@ -1,25 +1,11 @@
 import aiosmtplib
 from email.message import EmailMessage
-import asyncio
-from datetime import datetime, timezone, timedelta
 
-from aiogram import Bot, Router, types
-from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
-from aiohttp import web
-from fastapi import status
-
-from app.settings.config import email_settings
-from app.models.hotel import HotelAdmins
 from app.repo.bookings_repo import AdminBookingsRepo
 from app.models.booking import Bookings
 from app.models.user import Users
-from app.repo.hotels_repo import AdminBotHotelRepo
 from app.repo.users_repo import AdminUsersRepo
-from app.schemas.bookings_schemas import BookingStatus
-from app.schemas.bot_schemas import BookingApproveProcessSchema, BookingApproveRequestSchema, BookingApproveResponseSchema
 from app.settings.database import async_session_factory
-
-from app.bot.keyboard.inline_buttons import generate_approving_inline_buttons, ApprovingResCB
 
 
 async def send_approving_email(result: bool, booking_id: int) -> None:

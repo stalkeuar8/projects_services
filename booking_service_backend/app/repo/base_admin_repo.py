@@ -1,13 +1,11 @@
 from datetime import datetime, timezone
-from typing import Any, Generic, Sequence, Type, TypeVar, cast
+from typing import Generic, Sequence, Type, TypeVar
 
 from pydantic import BaseModel
-from sqlalchemy import ColumnElement, delete, inspect, select, update
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Mapper
 
-from app.models.base import Base
-from app.settings.database import async_engine, async_session_factory
+from app.settings.database import async_session_factory
 
 T = TypeVar("T")
 
