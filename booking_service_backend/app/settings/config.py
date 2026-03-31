@@ -27,11 +27,12 @@ class JwtSettings(Settings):
 
 
 class RedisSettings(Settings):
-    DB_HOST: str
+    REDIS_HOST: str
+    REDIS_PORT: int
 
     @property
     def REDIS_url(self) -> str:
-        return f"redis://{self.DB_HOST}:6379/0"
+        return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/0"
 
 
 class BotSettings(Settings):
@@ -70,8 +71,22 @@ class NgrokSettings(Settings):
         return self.NGROK_AUTHTOKEN
 
 
+class EmailSettings(Settings):
+    SERVICE_EMAIL: str
+    APP_PASSWORD: str
+
+    @property
+    def EMAIL(self) -> str:
+        return self.SERVICE_EMAIL
+    
+    @property
+    def PASSWORD(self) -> str:
+        return self.APP_PASSWORD
+
+
 database_settings = DatabaseSettings()
 jwt_settings = JwtSettings()
 redis_settings = RedisSettings()
 bot_settings = BotSettings()
 ngrok_settings = NgrokSettings()
+email_settings = EmailSettings()

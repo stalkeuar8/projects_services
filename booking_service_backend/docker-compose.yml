@@ -2,35 +2,63 @@
 services:
   postgres:
     image: postgres:17-alpine
-    command: >
-      postgres
-      -c timezone=Europe/Kyiv
-      -c log_timezone=Europe/Kyiv
     container_name: postgres_booking_service_db
     restart: no
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASS}   
       POSTGRES_DB: ${DB_NAME}    
-      TZ: Europe/Kyiv
     ports:
       - "5432:5432" 
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - booking_network
-      
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 5s
       timeout: 5s
       retries: 5
+
   redis:
     image: redis:alpine
     ports:
       - "6379:6379"
     networks:
       - booking_network
+
+  celery_worker:
+    build: .
+    command: celery -A app.background_tasks.celery_worker.celery_app worker --loglevel=info
+    env_file:
+      - .env
+    environment:
+      - PYTHONPATH=/app
+    networks:
+      - booking_network
+    volumes:
+      - .:/app
+    depends_on:
+      redis:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+
+  celery_beat:
+    build: .
+    command: celery -A app.background_tasks.celery_worker.celery_app beat --loglevel=info
+    env_file:
+      - .env
+    environment:
+      - PYTHONPATH=/app
+    networks:
+      - booking_network
+    volumes:
+      - .:/app
+    depends_on:
+      redis:
+        condition: service_started
+
   migrations:
     build: .
     command: alembic upgrade head
@@ -47,6 +75,7 @@ services:
       - DB_USER=${DB_USER}
       - DB_PASS=${DB_PASS}
       - DB_NAME=${DB_NAME}
+
   app:
     build: 
       context: .
@@ -66,7 +95,6 @@ services:
       - booking_network
     volumes:
       - .:/app
-
 
   bot:
     build: .
@@ -103,9 +131,10 @@ services:
       - "4040:4040"
     depends_on:
       - bot
+
 networks:
   booking_network:
     driver: bridge
 
 volumes:
-  postgres_data: 
+  postgres_data:
