@@ -20,10 +20,11 @@ update:
 	git pull origin main
 	@echo "Docker restarting..."
 	docker compose down
-	docker compose up -d --build
+	docker compose up
 	@echo "Updating finished!"
 
-up:
+build:
+	docker compose down
 	docker compose up -d
 
 down:

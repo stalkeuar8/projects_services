@@ -1,11 +1,12 @@
+from typing import Sequence
+
 from aiogram import F, Router, types
 from aiogram.filters import Command, CommandObject
-from app.repo.hotels_repo import AdminBotHotelRepo
-from app.repo.bookings_repo import AdminBookingsRepo
-from app.settings.database import async_session_factory
-from app.models.booking import Bookings
 
-from typing import Sequence
+from app.models.booking import Bookings
+from app.repo.bookings_repo import AdminBookingsRepo
+from app.repo.hotels_repo import AdminBotHotelRepo
+from app.settings.database import async_session_factory
 
 commands_router = Router()
 
@@ -23,10 +24,10 @@ async def current_hotel_bookins(message: types.Message, command: CommandObject) 
 
     if command.args:
         try:
-            limit = int(command.args.split(' ')[0])
+            limit = int(command.args.split(" ")[0])
             await message.answer(text=f"num: {str(limit)}, type: {type(limit)}")
         except Exception:
-            await message.answer(text=f'Wrong command args, must be a number (Used the default = 10)')
+            await message.answer(text=f"Wrong command args, must be a number (Used the default = 10)")
 
     async with async_session_factory.begin() as session:
         hotel = await AdminBotHotelRepo.get_hotel_info_by_chat_id(chat_id=chat_id, session=session)
@@ -42,9 +43,11 @@ async def current_hotel_bookins(message: types.Message, command: CommandObject) 
 
     if hotel_bookings:
         for booking in hotel_bookings:
-            await message.answer(text=f"ID: {booking.id}, Room id: {booking.room_id}, total price: {booking.total_price}, STATUS: {booking.status}, created at: {booking.created_at}")
+            await message.answer(
+                text=f"ID: {booking.id}, Room id: {booking.room_id}, total price: {booking.total_price}, STATUS: {booking.status}, created at: {booking.created_at}"
+            )
         return
-    
+
     else:
-        await message.answer(text='No bookings found')
+        await message.answer(text="No bookings found")
         return

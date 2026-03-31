@@ -32,8 +32,10 @@ class HotelsCreateSchema(BaseModel):
 class HotelsCreateListSchema(BaseModel):
     hotels_list: list[HotelsCreateSchema]
 
+
 class HotelsCreateListResponseSchema(BaseModel):
     hotels_list: list[HotelsCreateSchema]
+
 
 class HotelsListResponseSchema(BaseModel):
     hotels: list[HotelsResponseSchema]
@@ -61,4 +63,3 @@ class HotelEditSchema(BaseModel):
     country: str | None = None
     city: str | None = None
     rating: RatingValid | None = None
-

@@ -6,7 +6,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.jwt_gen import get_current_admin_user
 from app.models.hotel import Hotels
 from app.repo.hotels_repo import AdminHotelsRepo, HotelsRepo
-from app.schemas.hotels_schemas import HotelsCreateListResponseSchema, HotelEditSchema, HotelsCreateSchema, HotelSearchFilters, HotelsListResponseSchema, HotelsResponseSchema, HotelsCreateListSchema
+from app.schemas.hotels_schemas import (
+    HotelEditSchema,
+    HotelsCreateListResponseSchema,
+    HotelsCreateListSchema,
+    HotelsCreateSchema,
+    HotelSearchFilters,
+    HotelsListResponseSchema,
+    HotelsResponseSchema,
+)
 from app.settings.database import get_db
 from app.utils.response_parser import create_hotel_response
 

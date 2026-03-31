@@ -64,12 +64,7 @@ class BookingsRepo:
     ) -> bool:
         query = (
             select(Bookings)
-            .where(
-                Bookings.status != "canceled",
-                Bookings.check_in < check_out,
-                Bookings.check_out > check_in,
-                Bookings.room_id == room_id
-            )
+            .where(Bookings.status != "canceled", Bookings.check_in < check_out, Bookings.check_out > check_in, Bookings.room_id == room_id)
             .order_by(Bookings.id.desc())
             .with_for_update(nowait=True)
         )
@@ -127,11 +122,11 @@ class AdminBookingsRepo:
 
         if bookings:
             return bookings
-        
+
         return None
 
     @staticmethod
-    async def admin_change_booking_status(booking_id: int, new_status: str, session: AsyncSession) -> Bookings | None:
+    async def admin_change_booking_status(booking_id: int, new_status: BookingStatus, session: AsyncSession) -> Bookings | None:
         query = update(Bookings).where(Bookings.id == booking_id).values(status=new_status).returning(Bookings)
 
         result = await session.execute(query)

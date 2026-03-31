@@ -18,4 +18,3 @@ class HotelPasswordSchema(BaseModel):
 class HotelLoginSchema(BaseModel):
     hotel_id: int
     chat_id: str
-

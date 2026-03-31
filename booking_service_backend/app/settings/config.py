@@ -48,11 +48,11 @@ class BotSettings(Settings):
     @property
     def PORT(self) -> int:
         return self.BOT_PORT
-    
+
     @property
     def HOST(self) -> str:
         return self.BOT_HOST
-    
+
     @property
     def EXT_REQ_PATH(self) -> str:
         return self.EXTERNAL_REQUEST_PATH
@@ -62,14 +62,12 @@ class BotSettings(Settings):
         return self.WEBHOOK_PATH
 
 
-
 class NgrokSettings(Settings):
     NGROK_AUTHTOKEN: str
 
     @property
     def NGROK_TOKEN(self) -> str:
         return self.NGROK_AUTHTOKEN
-    
 
 
 database_settings = DatabaseSettings()

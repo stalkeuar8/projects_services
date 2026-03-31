@@ -1,6 +1,7 @@
 from typing import Any, Sequence
-from pydantic import BaseModel
 
+import bcrypt
+from pydantic import BaseModel
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import contains_eager
@@ -10,9 +11,8 @@ from app.models.hotel import HotelAdmins, Hotels
 from app.repo.base_admin_repo import BaseAdminRepo
 from app.repo.base_repo import BaseRepo
 from app.schemas.auth.hotel_bot_schemas import HotelLoginSchema
-from app.schemas.hotels_schemas import HotelEditSchema, HotelSearchFilters, HotelsCreateListSchema
+from app.schemas.hotels_schemas import HotelEditSchema, HotelsCreateListSchema, HotelSearchFilters
 
-import bcrypt
 
 class HotelsRepo(BaseRepo[Hotels]):
     model = Hotels
@@ -58,21 +58,21 @@ class AdminHotelsRepo(BaseAdminRepo[Hotels]):
 
         return new_obj
 
-
     @staticmethod
     async def multi_create(session: AsyncSession, inserting_data_list_dto: HotelsCreateListSchema) -> Sequence[Hotels]:
-
 
         new_hotel_objs: list[Hotels] = [Hotels(**obj_info.model_dump()) for obj_info in inserting_data_list_dto.hotels_list]
 
         session.add_all(new_hotel_objs)
         await session.flush()
 
-        new_hotel_admin_objs = [HotelAdmins(hotel_id=obj.id, bot_hashed_password=bcrypt.hashpw(f"password_hotel{obj.id}".encode("utf-8"), bcrypt.gensalt())) for obj in new_hotel_objs]
+        new_hotel_admin_objs = [
+            HotelAdmins(hotel_id=obj.id, bot_hashed_password=bcrypt.hashpw(f"password_hotel{obj.id}".encode("utf-8"), bcrypt.gensalt()))
+            for obj in new_hotel_objs
+        ]
         session.add_all(new_hotel_admin_objs)
 
         return new_hotel_objs
-
 
     @staticmethod
     async def admin_edit_hotel_info(hotel_id: int, session: AsyncSession, info_to_edit: HotelEditSchema) -> Hotels | None:
@@ -96,7 +96,6 @@ class AdminHotelsRepo(BaseAdminRepo[Hotels]):
         return edited_hotel
 
 
-
 class AdminBotHotelRepo:
     @staticmethod
     async def bot_login(session: AsyncSession, login_info: HotelLoginSchema) -> HotelAdmins | None:
@@ -116,7 +115,6 @@ class AdminBotHotelRepo:
 
         return updated_info
 
-
     @staticmethod
     async def get_hotel_admin_info(hotel_id: int, session: AsyncSession) -> HotelAdmins | None:
         query = select(HotelAdmins).where(HotelAdmins.hotel_id == hotel_id).with_for_update(nowait=True)
@@ -125,11 +123,10 @@ class AdminBotHotelRepo:
         hotel = result.scalar()
 
         return hotel
-    
 
     @staticmethod
     async def get_hotel_info_by_chat_id(chat_id: str, session: AsyncSession) -> HotelAdmins | None:
-        query = select(HotelAdmins).where(HotelAdmins.chat_id==chat_id).with_for_update(nowait=True)
+        query = select(HotelAdmins).where(HotelAdmins.chat_id == chat_id).with_for_update(nowait=True)
 
         result = await session.execute(query)
         hotel = result.scalar()
@@ -138,4 +135,3 @@ class AdminBotHotelRepo:
             return hotel
 
         return None
-

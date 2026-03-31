@@ -50,8 +50,6 @@ class BookingsResponseSchema(BookingsBaseSchema):
     total_price: int = Field(ge=0)
 
 
-
-
 class AvailabilityForBookingResponseSchema(BookingsBaseSchema):
     is_available: bool
 

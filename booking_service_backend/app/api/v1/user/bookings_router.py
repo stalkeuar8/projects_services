@@ -1,8 +1,9 @@
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status, BackgroundTasks
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.v1.requests import send_approving_request
 from app.auth.jwt_gen import get_current_user
 from app.models.booking import Bookings
 from app.models.user import Users
@@ -16,7 +17,7 @@ from app.schemas.bookings_schemas import (
 from app.services.booking_service import BookingService
 from app.settings.database import get_db
 from app.utils.response_parser import create_booking_response
-from app.api.v1.requests import send_approving_request
+
 booking_service = BookingService()
 
 bookings_router = APIRouter(prefix="/bookings", tags=["Bookings"])
@@ -24,7 +25,10 @@ bookings_router = APIRouter(prefix="/bookings", tags=["Bookings"])
 
 @bookings_router.post("/", summary="Create booking (Only logined users)", response_model=BookingsResponseSchema)
 async def create_booking(
-    body: BookingsPreparationSchema, background_tasks:  BackgroundTasks, session: AsyncSession = Depends(get_db), current_user: Users = Depends(get_current_user)
+    body: BookingsPreparationSchema,
+    background_tasks: BackgroundTasks,
+    session: AsyncSession = Depends(get_db),
+    current_user: Users = Depends(get_current_user),
 ) -> BookingsResponseSchema:
     new_booking: Bookings | None = await booking_service.new_booking(user_id=current_user.id, dto=body, session=session)
 
