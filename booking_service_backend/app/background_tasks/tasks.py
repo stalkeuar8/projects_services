@@ -1,9 +1,11 @@
 import asyncio
 from datetime import datetime, timezone
+
 from celery.schedules import crontab
 
-from app.background_tasks.celery_worker import celery_app
 from app.background_tasks.background_processes import BackgroundProcesses
+from app.background_tasks.celery_worker import celery_app
+
 
 @celery_app.task(name="delete_pending_bookings")
 def delete_pending_bookings():
@@ -19,12 +21,6 @@ def repair_bookings_status():
 
 
 celery_app.conf.beat_schedule = {
-    "check_delete_pending_bookings_15min" : {
-        "task" : "delete_pending_bookings",
-        "schedule" : crontab(minute="*/15")
-    },
-    "change_completed_and_checkedin_bookings_status" : {
-        "task" : "repair_bookings_status",
-        "schedule" : crontab(minute=0, hour=4)
-    }
+    "check_delete_pending_bookings_15min": {"task": "delete_pending_bookings", "schedule": crontab(minute="*/15")},
+    "change_completed_and_checkedin_bookings_status": {"task": "repair_bookings_status", "schedule": crontab(minute=0, hour=4)},
 }

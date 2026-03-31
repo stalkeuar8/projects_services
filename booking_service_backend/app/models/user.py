@@ -1,4 +1,3 @@
-
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, datetime_utc_timezone, id_primary_key, non_empty_str

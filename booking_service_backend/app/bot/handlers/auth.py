@@ -20,9 +20,9 @@ async def login_bot(message: types.Message, state: FSMContext) -> None:
         admin_info: HotelAdmins | None = await AdminBotHotelRepo.get_hotel_info_by_chat_id(chat_id=str(message.chat.id), session=session)
 
         if admin_info is not None:
-            await message.answer(text=f'You are already logined as admin of hotel {admin_info.hotel_id}\n\nLog out to login one more time. ❌')
-            return 
-        
+            await message.answer(text=f"You are already logined as admin of hotel {admin_info.hotel_id}\n\nLog out to login one more time. ❌")
+            return
+
     await message.answer(text="🏡 Enter hotel id: ")
     await state.set_state(LoginState.hotel_id)
 
@@ -58,8 +58,9 @@ async def process_password(message: types.Message, state: FSMContext) -> None:
 
             else:
                 if bcrypt.checkpw(password.encode("utf-8"), hotel.bot_hashed_password):
-                    updated_hotel_info = await AdminBotHotelRepo.bot_login(session=session, login_info=login_dto)
+                    await AdminBotHotelRepo.bot_login(session=session, login_info=login_dto)
                     await message.answer(text=f"Successfully logined by hotel {hotel_id} ✅")
+
                 else:
                     await message.answer(text="Wrong password provided. Access Denied ❌")
         else:

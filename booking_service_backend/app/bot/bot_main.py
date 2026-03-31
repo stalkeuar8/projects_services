@@ -6,8 +6,7 @@ from aiohttp import web
 
 from app.bot.handlers.auth import auth_router
 from app.bot.handlers.commands import commands_router
-from app.bot.handlers.http_requests_handler import approving_handler_router
-from app.bot.handlers.http_requests_handler import handle_external_request
+from app.bot.handlers.http_requests_handler import approving_handler_router, handle_external_request
 from app.settings.config import bot_settings
 
 

@@ -78,7 +78,7 @@ class EmailSettings(Settings):
     @property
     def EMAIL(self) -> str:
         return self.SERVICE_EMAIL
-    
+
     @property
     def PASSWORD(self) -> str:
         return self.APP_PASSWORD

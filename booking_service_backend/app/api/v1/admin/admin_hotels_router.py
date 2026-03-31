@@ -11,7 +11,7 @@ from app.schemas.hotels_schemas import (
     HotelsCreateListResponseSchema,
     HotelsCreateListSchema,
     HotelsCreateSchema,
-    HotelsResponseSchema
+    HotelsResponseSchema,
 )
 from app.settings.database import get_db
 from app.utils.response_parser import create_hotel_response

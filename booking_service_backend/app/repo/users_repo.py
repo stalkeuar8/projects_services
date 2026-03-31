@@ -1,4 +1,3 @@
-
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -27,7 +26,7 @@ class AdminUsersRepo(BaseAdminRepo[Users]):
 
     @staticmethod
     async def admin_find_by_contact_info(session: AsyncSession, email: str | None = None, phone_number: str | None = None) -> Users | None:
-        query = select(Users).where(Users.deleted_at == None)
+        query = select(Users).where(Users.deleted_at is None)
 
         if email:
             query = query.where(Users.email == email)

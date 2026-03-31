@@ -14,9 +14,7 @@ from app.api.v1.user.bookings_router import bookings_router
 from app.api.v1.user.hotels_router import hotels_router
 from app.api.v1.user.rooms_router import rooms_router
 from app.api.v1.user.users_router import users_router
-
 from app.settings.database import async_engine
-
 
 # START FUNCS, ROUTERS
 
@@ -54,9 +52,9 @@ async def handle_integrity_error(request: Request, exc: IntegrityError) -> None:
     error_details = "Error caused becuase "
 
     if "phone_number" in error_msg:
-        error_details += f"'phone_number' "
+        error_details += "'phone_number' "
     if "email" in error_msg:
-        error_details += f"'email' "
+        error_details += "'email' "
     error_details += " already exists, must be unique"
 
     return JSONResponse(status_code=status.HTTP_409_CONFLICT, content={"error_msg": error_msg, "details": error_details})

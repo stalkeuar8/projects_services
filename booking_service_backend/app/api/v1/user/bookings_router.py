@@ -1,4 +1,3 @@
-
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -46,13 +45,13 @@ async def create_booking(
 
 
 @bookings_router.get("/", summary="Get all user bookings (Only bookings created by current user)", response_model=BookingsResponseSchema)
-async def get_booking_by_id(session: AsyncSession = Depends(get_db), current_user: Users = Depends(get_current_user)) -> BookingsResponseSchema:
+async def get_booking_by_user(session: AsyncSession = Depends(get_db), current_user: Users = Depends(get_current_user)) -> BookingsResponseSchema:
     booking: Bookings | None = await BookingsRepo.find_all_my_bookings(session=session, current_user_id=current_user.id)
 
     if booking:
         return create_booking_response(booking)
 
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Bookings was not found")
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Bookings was not found")
 
 
 @bookings_router.get("/{booking_id}", summary="Get booking by id (Only bookings created by current user)", response_model=BookingsResponseSchema)

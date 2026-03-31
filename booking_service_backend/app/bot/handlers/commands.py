@@ -3,13 +3,12 @@ from typing import Sequence
 from aiogram import Router, types
 from aiogram.filters import Command, CommandObject
 
+from app.bot.keyboard.inline_buttons import generate_approving_inline_buttons
 from app.models.booking import Bookings
+from app.models.hotel import HotelAdmins
 from app.repo.bookings_repo import AdminBookingsRepo
 from app.repo.hotels_repo import AdminBotHotelRepo
 from app.settings.database import async_session_factory
-from app.models.hotel import HotelAdmins
-
-from app.bot.keyboard.inline_buttons import generate_approving_inline_buttons
 
 commands_router = Router()
 
@@ -30,7 +29,7 @@ async def current_hotel_bookins(message: types.Message, command: CommandObject) 
             limit = int(command.args.split(" ")[0])
             await message.answer(text=f"num: {str(limit)}, type: {type(limit)}")
         except Exception:
-            await message.answer(text=f"Wrong command args, must be a number (Used the default = 10)")
+            await message.answer(text="Wrong command args, must be a number (Used the default = 10)")
 
     async with async_session_factory.begin() as session:
         hotel = await AdminBotHotelRepo.get_hotel_info_by_chat_id(chat_id=chat_id, session=session)
@@ -47,7 +46,10 @@ async def current_hotel_bookins(message: types.Message, command: CommandObject) 
     if hotel_bookings:
         for booking in hotel_bookings:
             await message.answer(
-                text=f"ID: {booking.id}, Room id: {booking.room_id}, total price: {booking.total_price}, STATUS: {booking.status}, created at: {booking.created_at}"
+                text=(
+                    f"ID: {booking.id} | Room: {booking.room_id}\n"
+                    f"Price: {booking.total_price} | Status: {booking.status} | {booking.created_at.strftime('%d.%m %H:%M')}"
+                )
             )
         return
 
@@ -56,13 +58,11 @@ async def current_hotel_bookins(message: types.Message, command: CommandObject) 
         return
 
 
-
 @commands_router.message(Command("approvelist"))
 async def show_approve_list(message: types.Message) -> None:
     chat_id = str(message.chat.id)
 
     async with async_session_factory.begin() as session:
-
         hotel: HotelAdmins | None = await AdminBotHotelRepo.get_hotel_info_by_chat_id(chat_id=chat_id, session=session)
 
         if hotel:
@@ -72,13 +72,14 @@ async def show_approve_list(message: types.Message) -> None:
 
             if bookings:
                 for booking in bookings:
-                    await message.answer(text=(
-                        f"🆕 New booking (Room: {booking.room_id})\n"
-                        f"📅 Dates: {booking.check_in.date()} — {booking.check_out.date()}\n\n"
-                        f"💰 Total price: {booking.total_price} 💲\n"
-                        f"⌛ Created: {booking.created_at.strftime('%d.%m %H:%M')}"
-                    ), 
-                        reply_markup=generate_approving_inline_buttons(booking_id=booking.id)
+                    await message.answer(
+                        text=(
+                            f"🆕 New booking (Room: {booking.room_id})\n"
+                            f"📅 Dates: {booking.check_in.date()} — {booking.check_out.date()}\n\n"
+                            f"💰 Total price: {booking.total_price} 💲\n"
+                            f"⌛ Created: {booking.created_at.strftime('%d.%m %H:%M')}"
+                        ),
+                        reply_markup=generate_approving_inline_buttons(booking_id=booking.id),
                     )
                     return
             else:

@@ -1,4 +1,3 @@
-
 import aiohttp
 from fastapi.encoders import jsonable_encoder
 
@@ -28,5 +27,5 @@ async def send_approving_request(booking_info: BookingsResponseSchema):
 
                 return status
 
-        except aiohttp.ClientError as e:
+        except aiohttp.ClientError:
             return None

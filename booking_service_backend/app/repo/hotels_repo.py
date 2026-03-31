@@ -18,7 +18,7 @@ class HotelsRepo(BaseRepo[Hotels]):
     @staticmethod
     async def find_hotel_by_filters(filters: HotelSearchFilters, session: AsyncSession) -> Sequence[Hotels] | None:
 
-        query = select(Hotels).where(Hotels.deleted_at == None)
+        query = select(Hotels).where(Hotels.deleted_at is None)
 
         if filters.country:
             query = query.where(Hotels.country == filters.country)
@@ -74,7 +74,7 @@ class AdminHotelsRepo(BaseAdminRepo[Hotels]):
 
     @staticmethod
     async def admin_edit_hotel_info(hotel_id: int, session: AsyncSession, info_to_edit: HotelEditSchema) -> Hotels | None:
-        query = update(Hotels).where(Hotels.id == hotel_id, Hotels.deleted_at == None)
+        query = update(Hotels).where(Hotels.id == hotel_id, Hotels.deleted_at is None)
 
         if info_to_edit.country:
             query = query.values(country=info_to_edit.country)

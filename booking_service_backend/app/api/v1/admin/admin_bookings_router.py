@@ -6,11 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.jwt_gen import get_current_admin_user
 from app.models.booking import Bookings
 from app.repo.bookings_repo import AdminBookingsRepo
-from app.schemas.bookings_schemas import (
-    BookingsResponseSchema,
-    BookingsStatsRequestSchema,
-    BookingStatsResponseSchema
-)
+from app.schemas.bookings_schemas import BookingsResponseSchema, BookingsStatsRequestSchema, BookingStatsResponseSchema
 from app.services.booking_service import BookingService
 from app.settings.database import get_db
 from app.utils.response_parser import create_booking_response

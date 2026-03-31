@@ -19,8 +19,6 @@ class BackgroundProcesses:
         except Exception as e:
             print(f"Background bookings cleaner ERROR: {e}")
 
-
-
     @staticmethod
     async def background_status_checker() -> None:
         try:
@@ -35,4 +33,3 @@ class BackgroundProcesses:
 
         except Exception as e:
             print(f"Background status checker ERROR: {e}")
-
