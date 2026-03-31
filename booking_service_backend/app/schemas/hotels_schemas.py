@@ -34,7 +34,7 @@ class HotelsCreateListSchema(BaseModel):
 
 
 class HotelsCreateListResponseSchema(BaseModel):
-    hotels_list: list[HotelsCreateSchema]
+    hotels_list: list[HotelsResponseSchema]
 
 
 class HotelsListResponseSchema(BaseModel):

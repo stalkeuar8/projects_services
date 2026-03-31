@@ -1,4 +1,5 @@
 from typing import Sequence
+from datetime import datetime, timezone, timedelta
 
 from aiogram import F, Router, types
 from aiogram.filters import Command, CommandObject
@@ -7,6 +8,9 @@ from app.models.booking import Bookings
 from app.repo.bookings_repo import AdminBookingsRepo
 from app.repo.hotels_repo import AdminBotHotelRepo
 from app.settings.database import async_session_factory
+from app.models.hotel import HotelAdmins
+
+from app.bot.keyboard.inline_buttons import ApprovingResCB, generate_approving_inline_buttons
 
 commands_router = Router()
 
@@ -51,3 +55,37 @@ async def current_hotel_bookins(message: types.Message, command: CommandObject) 
     else:
         await message.answer(text="No bookings found")
         return
+
+
+
+@commands_router.message(Command("approvelist"))
+async def show_approve_list(message: types.Message) -> None:
+    chat_id = str(message.chat.id)
+
+    async with async_session_factory.begin() as session:
+
+        hotel: HotelAdmins | None = await AdminBotHotelRepo.get_hotel_info_by_chat_id(chat_id=chat_id, session=session)
+
+        if hotel:
+            hotel_id = hotel.hotel_id
+
+            bookings: Sequence[Bookings] | None = await AdminBookingsRepo.get_available_bookings(session=session, hotel_id=hotel_id)
+
+            if bookings:
+                for booking in bookings:
+                    await message.answer(text=(
+                        f"🆕 New booking (Room: {booking.room_id})\n"
+                        f"📅 Dates: {booking.check_in.date()} — {booking.check_out.date()}\n\n"
+                        f"💰 Total price: {booking.total_price} 💲\n"
+                        f"⌛ Created: {booking.created_at.strftime('%d.%m %H:%M')}"
+                    ), 
+                        reply_markup=generate_approving_inline_buttons(booking_id=booking.id)
+                    )
+                    return
+            else:
+                await message.answer(text="No available bookings for approve! ✅")
+                return
+
+        else:
+            await message.answer(text="You are not logined, you can not check bookings. ❌")
+            return

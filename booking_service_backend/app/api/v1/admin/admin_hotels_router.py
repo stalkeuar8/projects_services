@@ -46,7 +46,7 @@ async def admin_massive_create_hotel(body: HotelsCreateListSchema, session: Asyn
     new_hotels: Sequence[Hotels] | None = await AdminHotelsRepo.multi_create(session=session, inserting_data_list_dto=body)
 
     if new_hotels:
-        return new_hotels
+        return HotelsCreateListResponseSchema(hotels_list=[create_hotel_response(hotel) for hotel in new_hotels])
 
     raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Hotel not created, Back-end error.")
 

@@ -177,3 +177,24 @@ class AdminBookingsRepo:
             return response_obj
 
         return None
+
+
+    @staticmethod
+    async def get_available_bookings(session: AsyncSession, hotel_id: int) -> Sequence[Bookings] | None:
+        query = (
+            select(Bookings)
+            .join(Bookings.room)
+            .where(Rooms.hotel_id==hotel_id)
+            .where(Bookings.status=="pending")
+            .options(contains_eager(Bookings.room))
+            .with_for_update(nowait=True)
+        )
+
+        results = await session.execute(query)
+        bookings = results.scalars().all()
+
+        if bookings:
+            return bookings
+
+        return None
+
