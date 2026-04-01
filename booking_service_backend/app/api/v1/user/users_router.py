@@ -11,5 +11,5 @@ users_router = APIRouter(prefix="/users", tags=["Users"])
 
 
 @users_router.get("/me", summary="Get users profile (only logined users)", response_model=UsersResponseSchema)
-async def get_users_profile(current_user: Users = Depends(get_current_user), session: AsyncSession = Depends(get_db)):
+async def get_users_profile(current_user: Users = Depends(get_current_user), session: AsyncSession = Depends(get_db)) -> UsersResponseSchema:
     return create_user_response(current_user)

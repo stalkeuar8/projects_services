@@ -1,3 +1,5 @@
+from typing import Sequence
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,7 +14,7 @@ class UsersRepo(BaseRepo[Users]):
     model = Users
 
     @staticmethod
-    async def get_my_bookings(current_user_id: int, session: AsyncSession) -> Bookings | None:
+    async def get_my_bookings(current_user_id: int, session: AsyncSession) -> Sequence[Bookings] | None:
         query = select(Bookings).where(Bookings.user_id == current_user_id)
 
         results = await session.execute(query)

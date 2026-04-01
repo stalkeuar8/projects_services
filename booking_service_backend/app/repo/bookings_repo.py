@@ -76,7 +76,7 @@ class BookingsRepo:
         return True
 
     @staticmethod
-    async def get_not_available_rooms(check_in: datetime.datetime, check_out: datetime.datetime, session: AsyncSession) -> list[int | None]:
+    async def get_not_available_rooms(check_in: datetime.datetime, check_out: datetime.datetime, session: AsyncSession) -> Sequence[int] | None:
         query = (
             select(Bookings.room_id)
             .where(

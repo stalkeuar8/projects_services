@@ -1,3 +1,5 @@
+from typing import Sequence
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -31,9 +33,9 @@ async def admin_create_room(body: RoomsCreateSchema, session: AsyncSession = Dep
     raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Client not created, Back-end error.")
 
 
-@admin_rooms_router.post("/massive", summary="Multi create room (Admin)", response_model=list[RoomsResponseSchema])
-async def admin_multi_create_room(body: list[RoomsCreateSchema], session: AsyncSession = Depends(get_db)) -> list[RoomsResponseSchema]:
-    new_rooms: Rooms | None = await AdminRoomsRepo.multi_create(session=session, inserting_data_list_dto=body)
+@admin_rooms_router.post("/massive", summary="Multi create room (Admin)", response_model=Sequence[RoomsResponseSchema])
+async def admin_multi_create_room(body: list[RoomsCreateSchema], session: AsyncSession = Depends(get_db)) -> Sequence[RoomsResponseSchema]:
+    new_rooms: Sequence[Rooms] | None = await AdminRoomsRepo.multi_create(session=session, inserting_data_list_dto=body)
 
     if new_rooms:
         return [create_room_response(room) for room in new_rooms]

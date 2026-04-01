@@ -17,7 +17,7 @@ async def get_hotels_by_filters(body: Annotated[HotelSearchFilters, Query()], se
     hotels: Sequence[Hotels] | None = await HotelsRepo.find_hotel_by_filters(filters=body, session=session)
 
     if hotels:
-        return HotelsListResponseSchema(hotels=hotels)
+        return HotelsListResponseSchema(hotels=hotels, total=len(hotels))
 
     return HotelsListResponseSchema(hotels=[], total=0)
 

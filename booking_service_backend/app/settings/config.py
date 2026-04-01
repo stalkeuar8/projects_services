@@ -22,7 +22,7 @@ class JwtSettings(Settings):
     SECRET_KEY: str
 
     @property
-    def secret_key(self):
+    def secret_key(self) -> str:
         return self.SECRET_KEY
 
 

@@ -17,7 +17,7 @@ from app.utils.email_sender import send_approving_email
 approving_handler_router = Router()
 
 
-async def handle_external_request(request: web.Request) -> None:
+async def handle_external_request(request: web.Request) -> web.Response:
     bot: Bot = request.app.get("bot")
 
     try:
@@ -56,6 +56,10 @@ async def handle_external_request(request: web.Request) -> None:
 
 @approving_handler_router.callback_query(ApprovingResCB.filter())
 async def process_approving_result(callback: types.CallbackQuery, callback_data: ApprovingResCB) -> None:
+
+    if not isinstance(callback.message, types.Message):
+        await callback.answer("Error, invalid message")
+        return
 
     async with async_session_factory.begin() as session:
         if callback_data.approving_result == 1:

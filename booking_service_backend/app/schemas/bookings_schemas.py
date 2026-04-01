@@ -78,15 +78,20 @@ class BookingsStatsRequestSchema(BaseModel):
 
             return value.astimezone(timezone.utc)
 
+        return value
+
     @model_validator(mode="after")
     def validate_model(self) -> Self:
         if self.created_after and self.created_before:
             if self.created_after >= self.created_before:
                 raise ValueError("Created after must be less than created before!")
 
-        if self.created_before or self.created_after:
-            if self.created_after >= datetime.now(tz=timezone.utc) or self.created_before >= datetime.now(tz=timezone.utc):
-                raise ValueError("Created after AND created before must be less than now!")
+        if (self.created_after and self.created_after >= datetime.now(tz=timezone.utc)) or (
+            self.created_before and self.created_before >= datetime.now(tz=timezone.utc)
+        ):
+            raise ValueError("Created after AND created before must be less than now!")
+
+        return self
 
 
 class BookingStatsResponseSchema(BaseModel):

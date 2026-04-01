@@ -1,25 +1,25 @@
-from typing import Generic, Type, TypeVar
+from typing import Any, Generic, Type, TypeVar
 
-from sqlalchemy import select
+from sqlalchemy import cast, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.base import Base
 from app.settings.database import async_session_factory
 
-T = TypeVar("T")
+T = TypeVar("T", bound=Base)
 
 
 class BaseRepo(Generic[T]):
-    model: Type[T] | None = None
+    model: Type[T]
 
     @classmethod
     async def find_by_id(cls, session: AsyncSession, id_to_find: int) -> T | None:
 
-        if cls.model:
-            query = select(cls.model).where(cls.model.id == id_to_find, cls.model.deleted_at is None)
+        query = select(cls.model).where(cast(Any, cls.model.id) == id_to_find, cast(Any, cls.model.deleted_at) is None)
 
-            result = await session.execute(query)
-            found_obj = result.scalar()
+        result = await session.execute(query)
+        found_obj = result.scalar()
 
-            return found_obj
+        return found_obj
 
         raise ValueError()

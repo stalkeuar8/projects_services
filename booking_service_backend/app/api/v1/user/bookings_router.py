@@ -58,7 +58,7 @@ async def get_booking_by_user(session: AsyncSession = Depends(get_db), current_u
 async def get_booking_by_id(
     booking_id: int, session: AsyncSession = Depends(get_db), current_user: Users = Depends(get_current_user)
 ) -> BookingsResponseSchema:
-    booking: Bookings | None = await BookingsRepo.find_my_booking_by_id(session=session, id_to_find=booking_id, current_user_id=current_user.id)
+    booking: Bookings | None = await BookingsRepo.find_my_booking_by_id(session=session, current_user_id=current_user.id, booking_id=booking_id)
 
     if booking:
         return create_booking_response(booking)

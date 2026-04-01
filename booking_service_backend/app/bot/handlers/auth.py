@@ -41,9 +41,9 @@ async def process_password(message: types.Message, state: FSMContext) -> None:
 
     received_data: dict[str, Any] = await state.get_data()
 
-    hotel_id: int = int(received_data.get("hotel_id"))
-    password: str = received_data.get("password")
-    chat_id: str = str(message.chat.id)
+    hotel_id = int(received_data.get("hotel_id"))
+    password = str(received_data.get("password"))
+    chat_id = str(message.chat.id)
 
     login_dto = HotelLoginSchema(hotel_id=hotel_id, chat_id=chat_id)
 

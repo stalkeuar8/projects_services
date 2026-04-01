@@ -1,4 +1,4 @@
-from typing import Annotated, Self
+from typing import Annotated, Self, Sequence
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -28,15 +28,15 @@ class HotelsCreateSchema(BaseModel):
 
 
 class HotelsCreateListSchema(BaseModel):
-    hotels_list: list[HotelsCreateSchema]
+    hotels_list: Sequence[HotelsCreateSchema]
 
 
 class HotelsCreateListResponseSchema(BaseModel):
-    hotels_list: list[HotelsResponseSchema]
+    hotels_list: Sequence[HotelsResponseSchema]
 
 
 class HotelsListResponseSchema(BaseModel):
-    hotels: list[HotelsResponseSchema]
+    hotels: Sequence[HotelsResponseSchema]
     total: int | None
 
     @model_validator(mode="after")

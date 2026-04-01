@@ -8,13 +8,16 @@ from app.schemas.bot_schemas import BookingApproveRequestSchema
 from app.settings.database import async_session_factory
 
 
-async def send_approving_request(booking_info: BookingsResponseSchema):
+async def send_approving_request(booking_info: BookingsResponseSchema) -> int | None:
     url = "https://4a7f-195-211-138-69.ngrok-free.app/external-data"
 
     async with async_session_factory.begin() as session:
-        room_info: Rooms = await AdminRoomsRepo.admin_find_by_id(id_to_find=booking_info.room_id, session=session)
+        room_info: Rooms | None = await AdminRoomsRepo.admin_find_by_id(id_to_find=booking_info.room_id, session=session)
 
-        hotel_id = room_info.hotel_id
+        if room_info:
+            hotel_id = room_info.hotel_id
+        else:
+            return None
 
     booking_req_obj = BookingApproveRequestSchema(booking_info=booking_info, hotel_id=hotel_id)
 
@@ -22,7 +25,7 @@ async def send_approving_request(booking_info: BookingsResponseSchema):
         body = jsonable_encoder(booking_req_obj)
 
         try:
-            async with session.post(url=url, json=body, timeout=10) as response:
+            async with session.post(url=url, json=body, timeout=aiohttp.ClientTimeout(10)) as response:
                 status = response.status
 
                 return status

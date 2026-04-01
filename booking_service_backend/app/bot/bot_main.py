@@ -24,7 +24,7 @@ async def start_http_server(bot: Bot) -> None:
     await site.start()
 
 
-async def main():
+async def main() -> None:
     logging.basicConfig(level=logging.INFO)
     try:
         bot = Bot(token=bot_settings.TOKEN)

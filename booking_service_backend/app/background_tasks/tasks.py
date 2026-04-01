@@ -7,15 +7,15 @@ from app.background_tasks.background_processes import BackgroundProcesses
 from app.background_tasks.celery_worker import celery_app
 
 
-@celery_app.task(name="delete_pending_bookings")
-def delete_pending_bookings():
+@celery_app.task(name="delete_pending_bookings")  # type: ignore
+def delete_pending_bookings() -> str:
     asyncio.run(BackgroundProcesses.background_bookings_cleaner())
 
     return f"Pending bookings cleaned. Time: {datetime.now(tz=timezone.utc)}"
 
 
-@celery_app.task(name="repair_bookings_status")
-def repair_bookings_status():
+@celery_app.task(name="repair_bookings_status")  # type: ignore
+def repair_bookings_status() -> str:
     asyncio.run(BackgroundProcesses.background_status_checker())
     return f"Completed and Checked In bookings statuses changed. Time: {datetime.now(tz=timezone.utc)}"
 

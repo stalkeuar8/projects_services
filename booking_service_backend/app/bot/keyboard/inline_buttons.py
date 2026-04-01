@@ -1,5 +1,5 @@
 from aiogram.filters.callback_data import CallbackData
-from aiogram.types import InlineKeyboardButton
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 
@@ -8,7 +8,7 @@ class ApprovingResCB(CallbackData, prefix="appres"):
     approving_result: int
 
 
-def generate_approving_inline_buttons(booking_id: int) -> InlineKeyboardBuilder:
+def generate_approving_inline_buttons(booking_id: int) -> InlineKeyboardMarkup:
 
     builder = InlineKeyboardBuilder()
 

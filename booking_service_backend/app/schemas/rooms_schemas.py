@@ -88,7 +88,7 @@ class RoomSearchFilters(BaseModel):
         if self.min_price and self.max_price and self.min_price >= self.max_price:
             raise ValueError("RoomSearchFilters ERROR: Value 'min_price' must be less than 'max_price'!")
 
-        if self.check_out < self.check_in + timedelta(days=1):
+        if (self.check_out and self.check_in) and self.check_out < self.check_in + timedelta(days=1):
             raise ValueError("RoomSearchFilters ERROR: Value 'check_out' must be later than check in plus 1 day!")
         return self
 

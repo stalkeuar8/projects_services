@@ -69,8 +69,8 @@ async def register(body: UserRegisterRequestSchema, session: AsyncSession = Depe
     raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Back-end server BAD GATEWAY")
 
 
-@auth_router.post("/logout", summary="Logout")
-async def logout(jwt_token: str = Depends(oauth2_scheme), redis_session: redis.Redis = Depends(get_redis)) -> dict[str, Any]:
+@auth_router.post("/logout", summary="Logout", response_model=JSONResponse)
+async def logout(jwt_token: str = Depends(oauth2_scheme), redis_session: redis.Redis = Depends(get_redis)) -> JSONResponse:
 
     payload = decode_jwt(jwt_token=jwt_token)
 
@@ -97,7 +97,11 @@ async def refresh(request: RefreshTokenRequestSchema, redis_session: redis.Redis
         if payload.get("type") != "refresh":
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token type")
 
-        user_id = payload.get("sub")
+        sub = payload.get("sub")
+        if sub:
+            user_id = int(sub)
+        else:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User id was not found in Payload")
 
     except HTTPException:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token expired or invalid token type")

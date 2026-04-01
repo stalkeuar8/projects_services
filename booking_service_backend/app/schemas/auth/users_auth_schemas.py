@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Self
 
 import bcrypt
 from pydantic import BaseModel, EmailStr, model_validator
@@ -19,10 +20,10 @@ class UserLoginRequestSchema(BaseModel):
 
 class UserRegisterRequestSchema(UserBaseSchema):
     password: str
-    hashed_password: bytes = None
+    hashed_password: bytes | None = None
 
     @model_validator(mode="after")
-    def hash_password(self):
+    def hash_password(self) -> Self:
         self.hashed_password = bcrypt.hashpw(self.password.encode("utf-8"), bcrypt.gensalt())
         return self
 

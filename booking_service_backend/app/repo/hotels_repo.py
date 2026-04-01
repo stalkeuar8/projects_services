@@ -9,7 +9,7 @@ from app.models.hotel import HotelAdmins, Hotels
 from app.repo.base_admin_repo import BaseAdminRepo
 from app.repo.base_repo import BaseRepo
 from app.schemas.auth.hotel_bot_schemas import HotelLoginSchema
-from app.schemas.hotels_schemas import HotelEditSchema, HotelsCreateListSchema, HotelSearchFilters
+from app.schemas.hotels_schemas import HotelEditSchema, HotelsCreateSchema, HotelSearchFilters
 
 
 class HotelsRepo(BaseRepo[Hotels]):
@@ -57,9 +57,9 @@ class AdminHotelsRepo(BaseAdminRepo[Hotels]):
         return new_obj
 
     @staticmethod
-    async def multi_create(session: AsyncSession, inserting_data_list_dto: HotelsCreateListSchema) -> Sequence[Hotels]:
+    async def multi_create(session: AsyncSession, inserting_data_list_dto: Sequence[BaseModel]) -> Sequence[Hotels]:
 
-        new_hotel_objs: list[Hotels] = [Hotels(**obj_info.model_dump()) for obj_info in inserting_data_list_dto.hotels_list]
+        new_hotel_objs: Sequence[Hotels] = [Hotels(**obj_info.model_dump()) for obj_info in inserting_data_list_dto.hotels_list]
 
         session.add_all(new_hotel_objs)
         await session.flush()
