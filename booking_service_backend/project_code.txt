@@ -1,0 +1,2653 @@
+
+============================================================
+PATH: app/__init__.py
+============================================================
+
+
+
+============================================================
+PATH: app/models/booking.py
+============================================================
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.models.hotel import Rooms
+    from app.models.user import Users
+
+from sqlalchemy import ForeignKey, text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.models.base import Base, datetime_utc_timezone, id_primary_key, non_empty_str, not_null_int
+
+
+class Bookings(Base):
+    __tablename__ = "bookings"
+
+    id: Mapped[id_primary_key]
+    room_id: Mapped[not_null_int] = mapped_column(ForeignKey("rooms.id", ondelete="RESTRICT", onupdate="RESTRICT"))
+    user_id: Mapped[not_null_int] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT", onupdate="RESTRICT"))
+    created_at: Mapped[datetime_utc_timezone] = mapped_column(server_default=text("TIMEZONE('utc', now())"))
+    check_in: Mapped[datetime_utc_timezone] = mapped_column(nullable=False)
+    check_out: Mapped[datetime_utc_timezone] = mapped_column(nullable=False)
+    total_price: Mapped[not_null_int]
+    status: Mapped[non_empty_str] = mapped_column(default="pending")
+
+    user: Mapped["Users"] = relationship(back_populates="bookings")
+    room: Mapped["Rooms"] = relationship()
+
+
+============================================================
+PATH: app/models/hotel.py
+============================================================
+
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.models.base import Base, datetime_utc_timezone, id_primary_key, non_empty_str, not_null_int
+
+
+class Hotels(Base):
+    __tablename__ = "hotels"
+
+    id: Mapped[id_primary_key]
+    name: Mapped[non_empty_str]
+    country: Mapped[non_empty_str]
+    city: Mapped[non_empty_str]
+    rating: Mapped[not_null_int]
+    deleted_at: Mapped[datetime_utc_timezone] = mapped_column(default=None)
+
+    rooms: Mapped[list["Rooms"]] = relationship(back_populates="hotel")
+    admin: Mapped["HotelAdmins"] = relationship(back_populates="hotel")
+
+
+class Rooms(Base):
+    __tablename__ = "rooms"
+
+    id: Mapped[id_primary_key]
+    hotel_id: Mapped[not_null_int] = mapped_column(ForeignKey("hotels.id", ondelete="RESTRICT", onupdate="RESTRICT"))
+    category: Mapped[non_empty_str]
+    capacity: Mapped[not_null_int]
+    price_per_night: Mapped[not_null_int]
+    deleted_at: Mapped[datetime_utc_timezone] = mapped_column(default=None)
+
+    hotel: Mapped["Hotels"] = relationship(back_populates="rooms")
+
+
+class HotelAdmins(Base):
+    __tablename__ = "hotels_admins"
+
+    row_id: Mapped[id_primary_key]
+    hotel_id: Mapped[not_null_int] = mapped_column(ForeignKey("hotels.id", ondelete="RESTRICT", onupdate="RESTRICT"), unique=True)
+    bot_hashed_password: Mapped[bytes] = mapped_column(nullable=False)
+    chat_id: Mapped[str] = mapped_column(unique=True, default=None, nullable=True)
+
+    hotel: Mapped["Hotels"] = relationship(back_populates="admin")
+
+
+============================================================
+PATH: app/models/user.py
+============================================================
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.models.booking import Bookings
+
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.models.base import Base, datetime_utc_timezone, id_primary_key, non_empty_str
+from app.schemas.auth.users_auth_schemas import UsersRole
+
+
+class Users(Base):
+    __tablename__ = "users"
+
+    id: Mapped[id_primary_key]
+    full_name: Mapped[non_empty_str]
+    phone_number: Mapped[non_empty_str] = mapped_column(unique=True, name="phone_number")
+    email: Mapped[non_empty_str] = mapped_column(unique=True, name="email")
+    role: Mapped[non_empty_str] = mapped_column(default=UsersRole.CLIENT)
+    hashed_password: Mapped[bytes]
+    deleted_at: Mapped[datetime_utc_timezone] = mapped_column(default=None)
+
+    bookings: Mapped[list["Bookings"]] = relationship(back_populates="user")
+
+
+============================================================
+PATH: app/models/base.py
+============================================================
+
+import datetime
+from typing import Annotated
+
+from sqlalchemy import DateTime
+from sqlalchemy.orm import DeclarativeBase, mapped_column
+
+id_primary_key = Annotated[int, mapped_column(primary_key=True)]
+non_empty_str = Annotated[str, mapped_column(nullable=False)]
+not_null_int = Annotated[int, mapped_column(nullable=False)]
+datetime_utc_timezone = Annotated[datetime.datetime, mapped_column(DateTime(timezone=True), nullable=True)]
+
+
+class Base(DeclarativeBase):
+    pass
+
+
+============================================================
+PATH: app/models/__init__.py
+============================================================
+
+from app.models.base import Base
+from app.models.booking import Bookings
+from app.models.hotel import HotelAdmins, Hotels, Rooms
+from app.models.user import Users
+
+
+============================================================
+PATH: app/repo/bookings_repo.py
+============================================================
+
+import datetime
+from typing import Sequence
+
+from sqlalchemy import delete, select, update
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import contains_eager
+
+from app.models.booking import Bookings
+from app.models.hotel import Rooms
+from app.schemas.bookings_schemas import BookingsCreateSchema, BookingsStatsRequestSchema, BookingStatsResponseSchema, BookingStatus
+
+
+class BookingsRepo:
+    @staticmethod
+    async def new_booking(inserting_data_dto: BookingsCreateSchema, session: AsyncSession) -> Bookings | None:
+        new_obj = Bookings(**inserting_data_dto.model_dump())
+
+        session.add(new_obj)
+        await session.flush()
+
+        return new_obj
+
+    @staticmethod
+    async def find_my_booking_by_id(session: AsyncSession, booking_id: int, current_user_id: int) -> Bookings | None:
+
+        query = select(Bookings).where(Bookings.id == booking_id).where(Bookings.user_id == current_user_id)
+
+        result = await session.execute(query)
+        booking = result.scalar()
+
+        return booking
+
+    @staticmethod
+    async def find_all_my_bookings(session: AsyncSession, current_user_id: int) -> Bookings | None:
+
+        query = select(Bookings).where(Bookings.user_id == current_user_id)
+
+        result = await session.execute(query)
+        booking = result.scalars().all()
+
+        return booking
+
+    @staticmethod
+    async def cancel_my_booking_by_id(booking_id: int, current_user_id: int, session: AsyncSession) -> Bookings | None:
+
+        query = (
+            update(Bookings)
+            .where(Bookings.id == booking_id, Bookings.user_id == current_user_id)
+            .values(status=BookingStatus("canceled"))
+            .returning(Bookings)
+        )
+
+        result = await session.execute(query)
+        canceled_booking = result.scalar()
+
+        return canceled_booking
+
+    @staticmethod
+    async def check_is_available(
+        room_id: int,
+        check_in: datetime.datetime,
+        check_out: datetime.datetime,
+        session: AsyncSession,
+    ) -> bool:
+        query = (
+            select(Bookings)
+            .where(Bookings.status != "canceled", Bookings.check_in < check_out, Bookings.check_out > check_in, Bookings.room_id == room_id)
+            .order_by(Bookings.id.desc())
+            .with_for_update(nowait=True)
+        )
+        result = await session.execute(query)
+        booking = result.scalars().first()
+        if booking:
+            return False
+
+        return True
+
+    @staticmethod
+    async def get_not_available_rooms(check_in: datetime.datetime, check_out: datetime.datetime, session: AsyncSession) -> Sequence[int] | None:
+        query = (
+            select(Bookings.room_id)
+            .where(
+                Bookings.status != "canceled",
+                Bookings.check_in > check_out,
+                Bookings.check_out < check_in,
+            )
+            .order_by(Bookings.id.desc())
+        )
+
+        results = await session.execute(query)
+
+        ids = results.scalars().all()
+
+        return ids
+
+
+class AdminBookingsRepo:
+    @staticmethod
+    async def admin_find_by_id(session: AsyncSession, booking_id: int) -> Bookings | None:
+
+        query = select(Bookings).where(Bookings.id == booking_id)
+
+        result = await session.execute(query)
+        booking = result.scalar()
+
+        return booking
+
+    @staticmethod
+    async def admin_find_by_hotel_id(hotel_id: int, session: AsyncSession, limit: int = 10) -> Sequence[Bookings] | None:
+        query = (
+            select(Bookings)
+            .join(Bookings.room)
+            .where(Bookings.status != "canceled")
+            .where(Rooms.hotel_id == hotel_id)
+            .options(contains_eager(Bookings.room))
+            .order_by(Bookings.created_at.desc())
+            .limit(limit)
+        )
+
+        results = await session.execute(query)
+        bookings = results.scalars().all()
+
+        if bookings:
+            return bookings
+
+        return None
+
+    @staticmethod
+    async def admin_change_booking_status(booking_id: int, new_status: BookingStatus, session: AsyncSession) -> Bookings | None:
+        query = update(Bookings).where(Bookings.id == booking_id).values(status=new_status).returning(Bookings)
+
+        result = await session.execute(query)
+        updated_booking = result.scalar()
+
+        return updated_booking
+
+    @staticmethod
+    async def admin_delete_booking(booking_id: int, session: AsyncSession) -> Bookings | None:
+
+        query = delete(Bookings).where(Bookings.id == booking_id).returning(Bookings)
+
+        result = await session.execute(query)
+        deleted_booking = result.scalar()
+
+        return deleted_booking
+
+    @staticmethod
+    async def admin_get_bookings_stats(filters: BookingsStatsRequestSchema, session: AsyncSession) -> BookingStatsResponseSchema | None:
+
+        query = select(Bookings)
+
+        if filters.created_after:
+            query = query.where(Bookings.created_at >= filters.created_after)
+
+        if filters.created_before:
+            query = query.where(Bookings.created_at <= filters.created_before)
+
+        if filters.room_id:
+            query = query.where(Bookings.room_id == filters.room_id)
+
+        if filters.hotel_id:
+            query = query.join(Rooms).where(Rooms.hotel_id == filters.hotel_id).options(contains_eager(Bookings.room))
+
+        result = await session.execute(query)
+        bookings = result.scalars().all()
+
+        if bookings:
+            response_obj = BookingStatsResponseSchema(
+                total_bookings=len(bookings),
+                total_booked_bookings=len([booking for booking in bookings if booking.status == "booked"]),
+                total_canceled_bookings=len([booking for booking in bookings if booking.status == "canceled"]),
+                total_completed_bookings=len([booking for booking in bookings if booking.status == "completed"]),
+                total_checked_in_bookings=len([booking for booking in bookings if booking.status == "checked_in"]),
+                total_pending_bookings=len([booking for booking in bookings if booking.status == "pending"]),
+            )
+
+            return response_obj
+
+        return None
+
+    @staticmethod
+    async def get_available_bookings(session: AsyncSession, hotel_id: int) -> Sequence[Bookings] | None:
+        query = (
+            select(Bookings)
+            .join(Bookings.room)
+            .where(Rooms.hotel_id == hotel_id)
+            .where(Bookings.status == "pending")
+            .options(contains_eager(Bookings.room))
+            .with_for_update(nowait=True)
+        )
+
+        results = await session.execute(query)
+        bookings = results.scalars().all()
+
+        if bookings:
+            return bookings
+
+        return None
+
+
+============================================================
+PATH: app/repo/base_admin_repo.py
+============================================================
+
+from datetime import datetime, timezone
+from typing import Any, Generic, Sequence, Type, TypeVar
+
+from pydantic import BaseModel
+from sqlalchemy import cast, select, update
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.base import Base
+from app.settings.database import async_session_factory
+
+T = TypeVar("T", bound=Base)
+
+
+class BaseAdminRepo(Generic[T]):
+    model: Type[T]
+
+    @classmethod
+    async def create(cls, session: AsyncSession, inserting_data_dto: BaseModel) -> T:
+
+        new_obj = cls.model(**inserting_data_dto.model_dump())
+
+        session.add(new_obj)
+        await session.flush()
+
+        return new_obj
+
+    @classmethod
+    async def multi_create(cls, session: AsyncSession, inserting_data_list_dto: Sequence[BaseModel]) -> Sequence[T]:
+
+        new_objs = [cls.model(**obj_info.model_dump()) for obj_info in inserting_data_list_dto]
+
+        session.add_all(new_objs)
+        await session.flush()
+
+        return new_objs
+
+    @classmethod
+    async def admin_find_by_id(cls, session: AsyncSession, id_to_find: int) -> T | None:
+
+        query = select(cls.model).where(cast(Any, cls.model.id) == id_to_find, cast(Any, cls.model.deleted_at).is_(None))
+
+        result = await session.execute(query)
+        found_obj = result.scalar()
+
+        return found_obj
+
+    @classmethod
+    async def admin_delete_by_id(cls, session: AsyncSession, id_to_delete: int) -> T | None:
+
+        current_time = datetime.now(tz=timezone.utc)
+
+        query = update(cls.model).where(cast(Any, cls.model.id) == id_to_delete).values(deleted_at=current_time).returning(cls.model)
+
+        result = await session.execute(query)
+        deleted_obj = result.scalar_one_or_none()
+
+        return deleted_obj
+
+
+============================================================
+PATH: app/repo/hotels_repo.py
+============================================================
+
+from typing import Sequence
+
+import bcrypt
+from pydantic import BaseModel
+from sqlalchemy import select, update
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.hotel import HotelAdmins, Hotels
+from app.repo.base_admin_repo import BaseAdminRepo
+from app.repo.base_repo import BaseRepo
+from app.schemas.auth.hotel_bot_schemas import HotelLoginSchema
+from app.schemas.hotels_schemas import HotelEditSchema, HotelsCreateSchema, HotelSearchFilters
+
+
+class HotelsRepo(BaseRepo[Hotels]):
+    model = Hotels
+
+    @staticmethod
+    async def find_hotel_by_filters(filters: HotelSearchFilters, session: AsyncSession) -> Sequence[Hotels] | None:
+
+        query = select(Hotels).where(Hotels.deleted_at is None)
+
+        if filters.country:
+            query = query.where(Hotels.country == filters.country)
+
+        if filters.city:
+            query = query.where(Hotels.city == filters.city)
+
+        if filters.min_rating:
+            query = query.where((Hotels.rating > filters.min_rating) | (Hotels.rating == filters.min_rating))
+
+        if filters.max_rating:
+            query = query.where((Hotels.rating < filters.max_rating) | (Hotels.rating == filters.max_rating))
+
+        results = await session.execute(query)
+        rooms = results.scalars().all()
+
+        return rooms
+
+
+class AdminHotelsRepo(BaseAdminRepo[Hotels]):
+    model = Hotels
+
+    @classmethod
+    async def create(cls, session: AsyncSession, inserting_data_dto: BaseModel) -> Hotels:
+
+        new_obj = Hotels(**inserting_data_dto.model_dump())
+
+        session.add(new_obj)
+        await session.flush()
+
+        hashed_password = bcrypt.hashpw(f"password_hotel{new_obj.id}".encode("utf-8"), bcrypt.gensalt())
+
+        new_hotel_admin_obj = HotelAdmins(hotel_id=new_obj.id, bot_hashed_password=hashed_password)
+        session.add(new_hotel_admin_obj)
+
+        return new_obj
+
+    @staticmethod
+    async def multi_create(session: AsyncSession, inserting_data_list_dto: Sequence[BaseModel]) -> Sequence[Hotels]:
+
+        new_hotel_objs: Sequence[Hotels] = [Hotels(**obj_info.model_dump()) for obj_info in inserting_data_list_dto.hotels_list]
+
+        session.add_all(new_hotel_objs)
+        await session.flush()
+
+        new_hotel_admin_objs = [
+            HotelAdmins(hotel_id=obj.id, bot_hashed_password=bcrypt.hashpw(f"password_hotel{obj.id}".encode("utf-8"), bcrypt.gensalt()))
+            for obj in new_hotel_objs
+        ]
+        session.add_all(new_hotel_admin_objs)
+
+        return new_hotel_objs
+
+    @staticmethod
+    async def admin_edit_hotel_info(hotel_id: int, session: AsyncSession, info_to_edit: HotelEditSchema) -> Hotels | None:
+
+        if not info_to_edit:
+            return None
+        
+        query = update(Hotels).where(Hotels.id == hotel_id, Hotels.deleted_at.is_(None))
+        filters = {}
+
+        if info_to_edit.country:
+            filters['country'] = info_to_edit.country
+
+        if info_to_edit.city:
+            filters['city'] = info_to_edit.city
+
+        if info_to_edit.rating:
+            filters['rating'] = info_to_edit.rating
+
+        if info_to_edit.name:
+            filters['name'] = info_to_edit.name
+
+        query = query.values(**filters)
+        result = await session.execute(query)
+        edited_hotel = result.scalar()
+
+        return edited_hotel
+
+
+class AdminBotHotelRepo:
+    @staticmethod
+    async def bot_login(session: AsyncSession, login_info: HotelLoginSchema) -> HotelAdmins | None:
+        query = update(HotelAdmins).where(HotelAdmins.hotel_id == login_info.hotel_id).values(chat_id=login_info.chat_id).returning(HotelAdmins)
+
+        result = await session.execute(query)
+        updated_info = result.scalar()
+
+        return updated_info
+
+    @staticmethod
+    async def bot_logout(session: AsyncSession, hotel_id: int) -> HotelAdmins | None:
+        query = update(HotelAdmins).where(HotelAdmins.hotel_id == hotel_id).values(chat_id=None).returning(HotelAdmins)
+
+        result = await session.execute(query)
+        updated_info = result.scalar()
+
+        return updated_info
+
+    @staticmethod
+    async def get_hotel_admin_info(hotel_id: int, session: AsyncSession) -> HotelAdmins | None:
+        query = select(HotelAdmins).where(HotelAdmins.hotel_id == hotel_id).with_for_update(nowait=True)
+
+        result = await session.execute(query)
+        hotel = result.scalar()
+
+        return hotel
+
+    @staticmethod
+    async def get_hotel_info_by_chat_id(chat_id: str, session: AsyncSession) -> HotelAdmins | None:
+        query = select(HotelAdmins).where(HotelAdmins.chat_id == chat_id).with_for_update(nowait=True)
+
+        result = await session.execute(query)
+        hotel = result.scalar()
+
+        if hotel:
+            return hotel
+
+        return None
+
+
+============================================================
+PATH: app/repo/base_repo.py
+============================================================
+
+from typing import Any, Generic, Type, TypeVar
+
+from sqlalchemy import cast, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.base import Base
+from app.settings.database import async_session_factory
+
+T = TypeVar("T", bound=Base)
+
+
+class BaseRepo(Generic[T]):
+    model: Type[T]
+
+    @classmethod
+    async def find_by_id(cls, session: AsyncSession, id_to_find: int) -> T | None:
+
+        query = select(cls.model).where(cast(Any, cls.model.id) == id_to_find, cast(Any, cls.model.deleted_at).is_(None))
+
+        result = await session.execute(query)
+        found_obj = result.scalar()
+
+        return found_obj
+
+
+============================================================
+PATH: app/repo/users_repo.py
+============================================================
+
+from typing import Sequence
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.booking import Bookings
+from app.models.user import Users
+from app.repo.base_admin_repo import BaseAdminRepo
+from app.repo.base_repo import BaseRepo
+from app.schemas.users_schemas import UserStatsResponseSchema
+
+
+class UsersRepo(BaseRepo[Users]):
+    model = Users
+
+    @staticmethod
+    async def get_my_bookings(current_user_id: int, session: AsyncSession) -> Sequence[Bookings] | None:
+        query = select(Bookings).where(Bookings.user_id == current_user_id)
+
+        results = await session.execute(query)
+        bookings = results.scalars().all()
+
+        return bookings
+
+
+class AdminUsersRepo(BaseAdminRepo[Users]):
+    model = Users
+
+    @staticmethod
+    async def admin_find_by_contact_info(session: AsyncSession, email: str | None = None, phone_number: str | None = None) -> Users | None:
+        query = select(Users).where(Users.deleted_at.is_(None))
+
+        if email:
+            query = query.where(Users.email == email)
+
+        else:
+            query = query.where(Users.phone_number == phone_number)
+
+        result = await session.execute(query)
+        user = result.scalar()
+
+        return user
+
+    @staticmethod
+    async def admin_get_users_stats(user_id: int, session: AsyncSession) -> UserStatsResponseSchema | None:
+
+        query = select(Bookings).where(Bookings.user_id == user_id)
+
+        results = await session.execute(query)
+        bookings = results.scalars().all()
+
+        if bookings:
+            return UserStatsResponseSchema(
+                users_bookings=bookings,
+                total_orders_price=sum([booking.total_price for booking in bookings]),
+                total_bookings=len(bookings),
+                total_booked_bookings=len([booking for booking in bookings if booking.status == "booked"]),
+                total_canceled_bookings=len([booking for booking in bookings if booking.status == "canceled"]),
+                total_completed_bookings=len([booking for booking in bookings if booking.status == "completed"]),
+                total_checked_in_bookings=len([booking for booking in bookings if booking.status == "checked_in"]),
+                total_pending_bookings=len([booking for booking in bookings if booking.status == "pending"]),
+            )
+
+        return None
+
+
+============================================================
+PATH: app/repo/rooms_repo.py
+============================================================
+
+from typing import Sequence
+
+from sqlalchemy import select, update
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import contains_eager
+
+from app.models.booking import Bookings
+from app.models.hotel import Hotels, Rooms
+from app.repo.base_admin_repo import BaseAdminRepo
+from app.repo.base_repo import BaseRepo
+from app.schemas.rooms_schemas import RoomEditSchema, RoomSearchFilters
+
+
+class RoomsRepo(BaseRepo[Rooms]):
+    model = Rooms
+
+    @staticmethod
+    async def get_price_per_night(id_to_find: int, session: AsyncSession) -> int:
+        query = select(Rooms).where(Rooms.id == id_to_find).where(Rooms.deleted_at is None)
+        result = (await session.execute(query)).scalar()
+
+        if result:
+            price: int = result.price_per_night
+            return price
+
+        raise ValueError("ERROR While getting price per night.")
+
+    @staticmethod
+    async def find_room_by_filters(filters: RoomSearchFilters, session: AsyncSession) -> Sequence[Rooms]:
+
+        query = select(Rooms).join(Rooms.hotel).where(Rooms.deleted_at.is_(None))
+
+        if filters.check_in and filters.check_out:
+            subquery = select(Bookings.room_id).where(
+                Bookings.status != "canceled",
+                Bookings.check_in < filters.check_out,
+                Bookings.check_out > filters.check_in,
+            )
+
+            query = query.where(Rooms.id.not_in(subquery))
+
+        if filters.country:
+            query = query.where(Hotels.country == filters.country)
+
+        if filters.city:
+            query = query.where(Hotels.city == filters.city)
+
+        if filters.min_rating:
+            query = query.where(Hotels.rating >= filters.min_rating)
+
+        if filters.max_rating:
+            query = query.where(Hotels.rating <= filters.max_rating)
+
+        if filters.category:
+            query = query.where(Rooms.category == filters.category)
+
+        if filters.min_capacity:
+            query = query.where(Rooms.capacity >= filters.min_capacity)
+
+        if filters.max_capacity:
+            query = query.where(Rooms.capacity <= filters.max_capacity)
+
+        if filters.min_price:
+            query = query.where(Rooms.price_per_night >= filters.min_price)
+
+        if filters.max_price:
+            query = query.where(Rooms.price_per_night <= filters.max_price)
+
+        query = query.options(contains_eager(Rooms.hotel))
+
+        results = await session.execute(query)
+        rooms = results.scalars().all()
+
+        return rooms
+
+
+class AdminRoomsRepo(BaseAdminRepo[Rooms]):
+    model = Rooms
+
+    @staticmethod
+    async def admin_edit_room_info(room_id: int, session: AsyncSession, info_to_edit: RoomEditSchema) -> Rooms | None:
+        query = update(Rooms).where(Rooms.id == room_id).where(Rooms.deleted_at.is_(None))
+
+        if info_to_edit.category:
+            query = query.values(category=info_to_edit.category)
+
+        if info_to_edit.capacity:
+            query = query.values(capacity=info_to_edit.capacity)
+
+        if info_to_edit.price_per_night:
+            query = query.values(price_per_night=info_to_edit.price_per_night)
+
+        if info_to_edit.hotel_id:
+            query = query.values(hotel_id=info_to_edit.hotel_id)
+
+        result = await session.execute(query)
+        edited_room = result.scalar()
+
+        return edited_room
+
+
+============================================================
+PATH: app/auth/jwt_gen.py
+============================================================
+
+import uuid
+from datetime import datetime, timedelta, timezone
+from typing import Any
+
+import jwt
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.user import Users
+from app.repo.users_repo import AdminUsersRepo
+from app.settings.config import jwt_settings
+from app.settings.database import get_db
+
+SECRET_KEY = jwt_settings.secret_key
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 15
+oauth2_scheme = OAuth2PasswordBearer("/auth/login")
+
+
+def create_access_token(user_id: int) -> str:
+    expires_at = datetime.now(tz=timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    jti = str(uuid.uuid4())
+
+    payload = {"sub": str(user_id), "exp": expires_at, "jti": jti}
+
+    encoded_jwt = jwt.encode(payload=payload, key=SECRET_KEY, algorithm=ALGORITHM)
+
+    return encoded_jwt
+
+
+def decode_jwt(jwt_token: str) -> dict[str, Any]:
+
+    try:
+        payload = jwt.decode(jwt_token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload
+
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is invalid")
+
+
+async def get_current_user(jwt_token: str = Depends(oauth2_scheme), session: AsyncSession = Depends(get_db)) -> Users:
+    payload = decode_jwt(jwt_token=jwt_token)
+
+    user_id = payload.get("sub", None)
+
+    if user_id:
+        user: Users | None = await AdminUsersRepo.admin_find_by_id(id_to_find=int(user_id), session=session)
+
+        if user is None:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="JWT Auth error, can not find user")
+
+        return user
+
+    else:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="JWT Auth error, Could not validate credentials")
+
+
+async def get_current_admin_user(current_user: Users = Depends(get_current_user)) -> Users:
+    if current_user.role != "admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Method not allowed for users (Admin only)")
+
+    return current_user
+
+
+============================================================
+PATH: app/bot/bot_main.py
+============================================================
+
+import asyncio
+import logging
+
+from aiogram import Bot, Dispatcher
+from aiohttp import web
+
+from app.bot.handlers.auth import auth_router
+from app.bot.handlers.commands import commands_router
+from app.bot.handlers.http_requests_handler import approving_handler_router, handle_external_request
+from app.settings.config import bot_settings
+
+
+async def start_http_server(bot: Bot) -> None:
+    bot_app = web.Application()
+    bot_app["bot"] = bot
+
+    bot_app.router.add_post(bot_settings.EXT_REQ_PATH, handle_external_request)
+
+    runner = web.AppRunner(bot_app)
+    await runner.setup()
+
+    site = web.TCPSite(runner=runner, host=bot_settings.HOST, port=bot_settings.PORT)
+
+    await site.start()
+
+
+async def main() -> None:
+    logging.basicConfig(level=logging.INFO)
+    try:
+        bot = Bot(token=bot_settings.TOKEN)
+        dp = Dispatcher()
+        dp.include_router(commands_router)
+        dp.include_router(auth_router)
+        dp.include_router(approving_handler_router)
+
+        asyncio.create_task(start_http_server(bot))
+
+        await dp.start_polling(bot)
+
+    except Exception as e:
+        print(e)
+
+
+if __name__ == "__main__":
+    try:
+        asyncio.run(main())
+
+    except Exception as e:
+        print(f"BOT STOPPED, ERROR: {e}")
+
+
+============================================================
+PATH: app/bot/fsm/login_state.py
+============================================================
+
+from aiogram.fsm.state import State, StatesGroup
+
+
+class LoginState(StatesGroup):
+    hotel_id = State()
+    password = State()
+
+
+============================================================
+PATH: app/bot/handlers/http_requests_handler.py
+============================================================
+
+from datetime import datetime, timedelta, timezone
+
+from aiogram import Bot, Router, types
+from aiohttp import web
+from fastapi import status
+
+from app.bot.keyboard.inline_buttons import ApprovingResCB, generate_approving_inline_buttons
+from app.models.booking import Bookings
+from app.models.hotel import HotelAdmins
+from app.repo.bookings_repo import AdminBookingsRepo
+from app.repo.hotels_repo import AdminBotHotelRepo
+from app.schemas.bookings_schemas import BookingStatus
+from app.schemas.bot_schemas import BookingApproveProcessSchema
+from app.settings.database import async_session_factory
+from app.utils.email_sender import send_approving_email
+
+approving_handler_router = Router()
+
+
+async def handle_external_request(request: web.Request) -> web.Response:
+    bot: Bot = request.app.get("bot")
+
+    try:
+        body = await request.json()
+
+        data = BookingApproveProcessSchema(**body)
+        hotel_id = data.hotel_id
+
+        async with async_session_factory.begin() as session:
+            logined_admin_info: HotelAdmins | None = await AdminBotHotelRepo.get_hotel_admin_info(hotel_id=hotel_id, session=session)
+
+            if logined_admin_info:
+                chat_id = logined_admin_info.chat_id
+                message_to_send = (
+                    f"🆕 New booking (Room: {data.booking_info.room_id})\n"
+                    f"📅 Dates: {data.booking_info.check_in.date()} — {data.booking_info.check_out.date()}\n\n"
+                    f"💰 Total price: {data.booking_info.total_price} 💲\n"
+                    f"⌛ Created: {data.booking_info.created_at.strftime('%d.%m %H:%M')}"
+                )
+
+                await bot.send_message(
+                    chat_id=chat_id,
+                    text=message_to_send,
+                    reply_markup=generate_approving_inline_buttons(booking_id=data.booking_info.id),
+                    parse_mode="html",
+                )
+
+                return web.Response(status=200, text="OK")
+
+            else:
+                return web.Response(status=status.HTTP_401_UNAUTHORIZED, text="Hotel is not authorized, booking can not be accepted")
+
+    except Exception as e:
+        return web.Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR, text=f"Internal server ERROR: {e}")
+
+
+@approving_handler_router.callback_query(ApprovingResCB.filter())
+async def process_approving_result(callback: types.CallbackQuery, callback_data: ApprovingResCB) -> None:
+
+    if not isinstance(callback.message, types.Message):
+        await callback.answer("Error, invalid message")
+        return
+
+    async with async_session_factory.begin() as session:
+        if callback_data.approving_result == 1:
+            max_approving_time = datetime.now(tz=timezone.utc) - timedelta(minutes=15)
+
+            booking: Bookings | None = await AdminBookingsRepo.admin_find_by_id(session=session, booking_id=callback_data.booking_id)
+
+            if booking:
+                booking_created_at = booking.created_at
+                if booking_created_at < max_approving_time:
+                    await callback.message.edit_text(
+                        text=f"You run out of approving time limit ⌛\n\nBooking {callback_data.booking_id} has been canceled automatically"
+                    )
+                    await send_approving_email(result=False, booking_id=callback_data.booking_id)
+                    return
+
+            approved_booking: Bookings | None = await AdminBookingsRepo.admin_change_booking_status(
+                session=session, booking_id=callback_data.booking_id, new_status=BookingStatus("booked")
+            )
+
+            if approved_booking:
+                await callback.message.edit_text(text=f"Booking ID: {callback_data.booking_id}\n\nSTATUS: Approved ✅")
+                await send_approving_email(result=True, booking_id=callback_data.booking_id)
+            else:
+                await callback.message.edit_text(text="Error occured, booking will be canceled.")
+                await send_approving_email(result=False, booking_id=callback_data.booking_id)
+
+        else:
+            canceled_booking: Bookings | None = await AdminBookingsRepo.admin_change_booking_status(
+                session=session, booking_id=callback_data.booking_id, new_status=BookingStatus("canceled")
+            )
+
+            if canceled_booking:
+                await callback.message.edit_text(text=f"Booking ID: {callback_data.booking_id}\n\nSTATUS: Canceled ❌")
+
+            else:
+                await callback.message.edit_text(text="Error occured, booking will be canceled.")
+
+            await send_approving_email(result=False, booking_id=callback_data.booking_id)
+
+
+============================================================
+PATH: app/bot/handlers/auth.py
+============================================================
+
+from typing import Any
+
+import bcrypt
+from aiogram import Router, types
+from aiogram.filters import Command
+from aiogram.fsm.context import FSMContext
+
+from app.bot.fsm.login_state import LoginState
+from app.models.hotel import HotelAdmins
+from app.repo.hotels_repo import AdminBotHotelRepo
+from app.schemas.auth.hotel_bot_schemas import HotelLoginSchema
+from app.settings.database import async_session_factory
+
+auth_router = Router()
+
+
+@auth_router.message(Command("login"))
+async def login_bot(message: types.Message, state: FSMContext) -> None:
+    async with async_session_factory.begin() as session:
+        admin_info: HotelAdmins | None = await AdminBotHotelRepo.get_hotel_info_by_chat_id(chat_id=str(message.chat.id), session=session)
+
+        if admin_info is not None:
+            await message.answer(text=f"You are already logined as admin of hotel {admin_info.hotel_id}\n\nLog out to login one more time. ❌")
+            return
+
+    await message.answer(text="🏡 Enter hotel id: ")
+    await state.set_state(LoginState.hotel_id)
+
+
+@auth_router.message(LoginState.hotel_id)
+async def process_hotel_id(message: types.Message, state: FSMContext) -> None:
+    await state.update_data(hotel_id=message.text)
+
+    await message.answer(text="Hotel id received! ✅\n\n🎰 Enter password: ")
+    await state.set_state(LoginState.password)
+
+
+@auth_router.message(LoginState.password)
+async def process_password(message: types.Message, state: FSMContext) -> None:
+    await state.update_data(password=message.text)
+
+    received_data: dict[str, Any] = await state.get_data()
+
+    hotel_id = int(received_data.get("hotel_id"))
+    password = str(received_data.get("password"))
+    chat_id = str(message.chat.id)
+
+    login_dto = HotelLoginSchema(hotel_id=hotel_id, chat_id=chat_id)
+
+    await state.clear()
+
+    async with async_session_factory.begin() as session:
+        hotel = await AdminBotHotelRepo.get_hotel_admin_info(hotel_id=hotel_id, session=session)
+
+        if hotel:
+            if hotel.chat_id:
+                await message.answer(text="Log out from another device, only one admin session is allowed ❌")
+
+            else:
+                if bcrypt.checkpw(password.encode("utf-8"), hotel.bot_hashed_password):
+                    await AdminBotHotelRepo.bot_login(session=session, login_info=login_dto)
+                    await message.answer(text=f"Successfully logined by hotel {hotel_id} ✅")
+
+                else:
+                    await message.answer(text="Wrong password provided. Access Denied ❌")
+        else:
+            await message.answer(text="Hotel was not found, try more ❌")
+
+
+@auth_router.message(Command("logout"))
+async def bot_logout(message: types.Message) -> None:
+    chat_id = str(message.chat.id)
+
+    async with async_session_factory.begin() as session:
+        hotel_info: HotelAdmins | None = await AdminBotHotelRepo.get_hotel_info_by_chat_id(chat_id=chat_id, session=session)
+
+        if hotel_info is not None:
+            hotel_admin: HotelAdmins | None = await AdminBotHotelRepo.bot_logout(session=session, hotel_id=hotel_info.hotel_id)
+
+        else:
+            await message.answer("You are not logined, you can not logout. ❌")
+
+    if hotel_admin is not None:
+        await message.answer("Logout successful! ✅")
+
+    else:
+        await message.answer("Error. Hotel was not found. 📛")
+
+
+============================================================
+PATH: app/bot/handlers/commands.py
+============================================================
+
+from typing import Sequence
+
+from aiogram import Router, types
+from aiogram.filters import Command, CommandObject
+
+from app.bot.keyboard.inline_buttons import generate_approving_inline_buttons
+from app.models.booking import Bookings
+from app.models.hotel import HotelAdmins
+from app.repo.bookings_repo import AdminBookingsRepo
+from app.repo.hotels_repo import AdminBotHotelRepo
+from app.settings.database import async_session_factory
+
+commands_router = Router()
+
+
+@commands_router.message(Command("start"))
+async def start_response(message: types.Message) -> None:
+    await message.answer(text="hello")
+
+
+@commands_router.message(Command("bookings"))
+async def current_hotel_bookins(message: types.Message, command: CommandObject) -> None:
+    chat_id = str(message.chat.id)
+
+    limit = 10
+
+    if command.args:
+        try:
+            limit = int(command.args.split(" ")[0])
+            await message.answer(text=f"num: {str(limit)}, type: {type(limit)}")
+        except Exception:
+            await message.answer(text="Wrong command args, must be a number (Used the default = 10)")
+
+    async with async_session_factory.begin() as session:
+        hotel = await AdminBotHotelRepo.get_hotel_info_by_chat_id(chat_id=chat_id, session=session)
+
+        hotel_bookings: Sequence[Bookings] | None = None
+
+        if hotel is not None:
+            hotel_bookings = await AdminBookingsRepo.admin_find_by_hotel_id(hotel_id=hotel.hotel_id, session=session, limit=limit)
+
+        else:
+            await message.answer(text="You are not logined, you can not check bookings.")
+            return
+
+    if hotel_bookings:
+        for booking in hotel_bookings:
+            await message.answer(
+                text=(
+                    f"ID: {booking.id} | Room: {booking.room_id}\n"
+                    f"Price: {booking.total_price} | Status: {booking.status} | {booking.created_at.strftime('%d.%m %H:%M')}"
+                )
+            )
+        return
+
+    else:
+        await message.answer(text="No bookings found")
+        return
+
+
+@commands_router.message(Command("approvelist"))
+async def show_approve_list(message: types.Message) -> None:
+    chat_id = str(message.chat.id)
+
+    async with async_session_factory.begin() as session:
+        hotel: HotelAdmins | None = await AdminBotHotelRepo.get_hotel_info_by_chat_id(chat_id=chat_id, session=session)
+
+        if hotel:
+            hotel_id = hotel.hotel_id
+
+            bookings: Sequence[Bookings] | None = await AdminBookingsRepo.get_available_bookings(session=session, hotel_id=hotel_id)
+
+            if bookings:
+                for booking in bookings:
+                    await message.answer(
+                        text=(
+                            f"🆕 New booking (Room: {booking.room_id})\n"
+                            f"📅 Dates: {booking.check_in.date()} — {booking.check_out.date()}\n\n"
+                            f"💰 Total price: {booking.total_price} 💲\n"
+                            f"⌛ Created: {booking.created_at.strftime('%d.%m %H:%M')}"
+                        ),
+                        reply_markup=generate_approving_inline_buttons(booking_id=booking.id),
+                    )
+                    return
+            else:
+                await message.answer(text="No available bookings for approve! ✅")
+                return
+
+        else:
+            await message.answer(text="You are not logined, you can not check bookings. ❌")
+            return
+
+
+============================================================
+PATH: app/bot/keyboard/inline_buttons.py
+============================================================
+
+from aiogram.filters.callback_data import CallbackData
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.utils.keyboard import InlineKeyboardBuilder
+
+
+class ApprovingResCB(CallbackData, prefix="appres"):
+    booking_id: int
+    approving_result: int
+
+
+def generate_approving_inline_buttons(booking_id: int) -> InlineKeyboardMarkup:
+
+    builder = InlineKeyboardBuilder()
+
+    builder.row(
+        InlineKeyboardButton(text="Approve ✅", callback_data=ApprovingResCB(booking_id=booking_id, approving_result=1).pack()),
+        InlineKeyboardButton(text="Reject ❌", callback_data=ApprovingResCB(booking_id=booking_id, approving_result=0).pack()),
+    )
+
+    builder.adjust(2)
+
+    return builder.as_markup()
+
+
+============================================================
+PATH: app/services/booking_service.py
+============================================================
+
+import asyncio
+import random
+from typing import Sequence
+
+from sqlalchemy import update
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.booking import Bookings
+from app.models.hotel import Rooms
+from app.repo.bookings_repo import BookingsRepo
+from app.repo.rooms_repo import RoomsRepo
+from app.schemas.bookings_schemas import AvailabilityForBookingRequestSchema, BookingsCreateSchema, BookingsPreparationSchema, BookingStatus
+from app.schemas.rooms_schemas import RoomSearchFilters
+from app.settings.database import async_session_factory
+
+
+class BookingService:
+    async def search_matching_rooms(self, filters: RoomSearchFilters, session: AsyncSession) -> Sequence[Rooms]:
+        print(f"Finding matching rooms by filters: {filters.model_dump(exclude_none=True)}")
+
+        if (filters.check_out and not filters.check_in) or (filters.check_in and not filters.check_out):
+            raise ValueError
+
+        rooms = await RoomsRepo.find_room_by_filters(filters=filters, session=session)
+
+        return rooms
+
+    async def check_available(self, dto: AvailabilityForBookingRequestSchema, session: AsyncSession) -> bool:
+        room_id = dto.room_id
+        check_in = dto.check_in
+        check_out = dto.check_out
+
+        room_status: bool = await BookingsRepo.check_is_available(room_id=room_id, check_in=check_in, check_out=check_out, session=session)
+
+        return room_status
+
+    async def _prepare_dto(self, user_id: int, short_dto: BookingsPreparationSchema, session: AsyncSession) -> BookingsCreateSchema:
+
+        price_per_night = await RoomsRepo.get_price_per_night(id_to_find=short_dto.room_id, session=session)
+        total_days = (short_dto.check_out - short_dto.check_in).days
+
+        dto = BookingsCreateSchema(
+            room_id=short_dto.room_id,
+            user_id=user_id,
+            check_in=short_dto.check_in,
+            check_out=short_dto.check_out,
+            total_price=total_days * price_per_night,
+            status=BookingStatus("pending"),
+        )
+
+        return dto
+
+    async def new_booking(self, user_id: int, dto: BookingsPreparationSchema, session: AsyncSession) -> Bookings | None:
+        obj_to_check = AvailabilityForBookingRequestSchema(room_id=dto.room_id, check_in=dto.check_in, check_out=dto.check_out)
+
+        availability_result = await self.check_available(dto=obj_to_check, session=session)
+
+        if availability_result:
+            new_booking_info = await self._prepare_dto(short_dto=dto, user_id=user_id, session=session)
+            new_booking = await BookingsRepo.new_booking(inserting_data_dto=new_booking_info, session=session)
+
+            return new_booking
+
+        return None
+
+
+============================================================
+PATH: app/api/v1/requests.py
+============================================================
+
+import aiohttp
+from fastapi.encoders import jsonable_encoder
+
+from app.models.hotel import Rooms
+from app.repo.rooms_repo import AdminRoomsRepo
+from app.schemas.bookings_schemas import BookingsResponseSchema
+from app.schemas.bot_schemas import BookingApproveRequestSchema
+from app.settings.database import async_session_factory
+from app.settings.config import bot_settings
+
+
+async def send_approving_request(booking_info: BookingsResponseSchema) -> int | None:
+    url = bot_settings.URL
+    
+    async with async_session_factory.begin() as session:
+        room_info: Rooms | None = await AdminRoomsRepo.admin_find_by_id(id_to_find=booking_info.room_id, session=session)
+
+        if room_info:
+            hotel_id = room_info.hotel_id
+        else:
+            return None
+
+    booking_req_obj = BookingApproveRequestSchema(booking_info=booking_info, hotel_id=hotel_id)
+
+    async with aiohttp.ClientSession() as session:
+        body = jsonable_encoder(booking_req_obj)
+
+        try:
+            async with session.post(url=url, json=body, timeout=aiohttp.ClientTimeout(10)) as response:
+                status = response.status
+
+                return status
+
+        except aiohttp.ClientError:
+            return None
+
+
+============================================================
+PATH: app/api/v1/user/rooms_router.py
+============================================================
+
+from datetime import datetime
+from typing import Annotated, Sequence
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.api.v1.user.bookings_router import booking_service
+from app.models.hotel import Rooms
+from app.repo.bookings_repo import BookingsRepo
+from app.repo.rooms_repo import RoomsRepo
+from app.schemas.bookings_schemas import AvailabilityForBookingResponseSchema
+from app.schemas.rooms_schemas import RoomSearchFilters, RoomsListResponseSchema, RoomsResponseSchema
+from app.settings.database import get_db
+from app.utils.response_parser import create_room_response
+
+rooms_router = APIRouter(prefix="/rooms", tags=["Rooms"])
+
+
+@rooms_router.get("/", summary="Get rooms by filters", response_model=RoomsListResponseSchema)
+async def get_rooms_by_filters(body: Annotated[RoomSearchFilters, Query()], session: AsyncSession = Depends(get_db)) -> RoomsListResponseSchema:
+    try:
+        rooms: Sequence[Rooms] | None = await booking_service.search_matching_rooms(filters=body, session=session)
+
+        if rooms:
+            return RoomsListResponseSchema(rooms=rooms, total=len(rooms))
+
+        return RoomsListResponseSchema(rooms=[], total=0)
+
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Must be or both date limits, or no date limits")
+
+
+@rooms_router.get("/{room_id}", summary="Get room by id", response_model=RoomsResponseSchema)
+async def get_room_by_id(room_id: int, session: AsyncSession = Depends(get_db)) -> RoomsResponseSchema | None:
+    room: Rooms | None = await RoomsRepo.find_by_id(id_to_find=room_id, session=session)
+
+    if room:
+        return RoomsResponseSchema.model_validate(room_obj=room)
+
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Room with id {room_id} was not found")
+
+
+@rooms_router.get("/{room_id}/available", summary="Check room availablitity by id and dates", response_model=AvailabilityForBookingResponseSchema)
+async def check_room_availability(
+    room_id: int, check_in: datetime = Query(), check_out: datetime = Query(), session: AsyncSession = Depends(get_db)
+) -> AvailabilityForBookingResponseSchema | None:
+    availability_result: bool | None = await BookingsRepo.check_is_available(room_id=room_id, check_in=check_in, check_out=check_out, session=session)
+
+    if availability_result is not None:
+        return AvailabilityForBookingResponseSchema(room_id=room_id, check_in=check_in, check_out=check_out, is_available=availability_result)
+
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Room with id {room_id} was not found")
+
+
+============================================================
+PATH: app/api/v1/user/auth_routers.py
+============================================================
+
+from datetime import datetime, timezone
+
+import bcrypt
+import redis.asyncio as redis
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import JSONResponse
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.auth.jwt_gen import create_access_token, decode_jwt, oauth2_scheme
+from app.models.user import Users
+from app.repo.users_repo import AdminUsersRepo
+from app.schemas.auth.users_auth_schemas import (
+    RefreshTokenRequestSchema,
+    RefreshTokenResponseSchema,
+    UserAuthResponseSchema,
+    UserLoginRequestSchema,
+    UserRegisterRequestSchema,
+)
+from app.schemas.users_schemas import UsersCreateSchema
+from app.settings.database import get_db
+from app.settings.redis import get_redis
+
+auth_router = APIRouter(prefix="/auth", tags=["Authentication"])
+
+
+@auth_router.post("/login", summary="Login as user", response_model=UserAuthResponseSchema)
+async def login(body: UserLoginRequestSchema, session: AsyncSession = Depends(get_db)) -> UserAuthResponseSchema | None:
+
+    user: Users | None = await AdminUsersRepo.admin_find_by_contact_info(session=session, email=body.email, phone_number=body.phone_number)
+
+    if user:
+        if bcrypt.checkpw(body.password.encode("utf-8"), user.hashed_password):
+            jwt_token = create_access_token(user_id=user.id)
+
+            return UserAuthResponseSchema(
+                email=user.email,
+                phone_number=user.phone_number,
+                id=user.id,
+                is_logined=True,
+                full_name=user.full_name,
+                jwt_token=jwt_token,
+                role=user.role,
+            )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Wrong password")
+
+    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User with such contact data was not found")
+
+
+@auth_router.post("/register", summary="Register as new user", response_model=UserAuthResponseSchema)
+async def register(body: UserRegisterRequestSchema, session: AsyncSession = Depends(get_db)) -> UserAuthResponseSchema | None:
+    new_user_dto = UsersCreateSchema(full_name=body.full_name, phone_number=body.phone_number, email=body.email, hashed_password=body.hashed_password)
+
+    new_user: Users | None = await AdminUsersRepo.create(session=session, inserting_data_dto=new_user_dto)
+
+    if new_user:
+        jwt_token = create_access_token(user_id=new_user.id)
+
+        return UserAuthResponseSchema(
+            email=new_user.email,
+            phone_number=new_user.phone_number,
+            id=new_user.id,
+            is_logined=True,
+            full_name=new_user.full_name,
+            jwt_token=jwt_token,
+            role=new_user.role,
+        )
+
+    raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Back-end server BAD GATEWAY")
+
+
+@auth_router.post("/logout", summary="Logout", response_model=JSONResponse)
+async def logout(jwt_token: str = Depends(oauth2_scheme), redis_session: redis.Redis = Depends(get_redis)) -> JSONResponse:
+
+    payload = decode_jwt(jwt_token=jwt_token)
+
+    exp = payload.get("exp", None)
+
+    if exp is not None:
+        current_time = datetime.now(tz=timezone.utc)
+        time_left = int(exp - current_time)
+
+        if time_left > 0:
+            await redis_session.set(f"blacklist:{jwt_token}", "1", ex=time_left)
+
+        return JSONResponse(status_code=status.HTTP_200_OK, content={"message": "Successfull log out"})
+
+    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Error while logging out, expiration time was not found")
+
+
+@auth_router.post("/refresh", summary="Refresh token", response_model=RefreshTokenResponseSchema)
+async def refresh(request: RefreshTokenRequestSchema, redis_session: redis.Redis = Depends(get_redis)) -> RefreshTokenResponseSchema:
+
+    try:
+        payload = decode_jwt(request.refresh_token)
+
+        if payload.get("type") != "refresh":
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token type")
+
+        sub = payload.get("sub")
+        if sub:
+            user_id = int(sub)
+        else:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User id was not found in Payload")
+
+    except HTTPException:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token expired or invalid token type")
+
+    stored_token = await redis_session.get(f"refresh:{user_id}")
+
+    if not stored_token or stored_token != request.refresh_token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
+
+    new_access_token = create_access_token(int(user_id))
+
+    return RefreshTokenResponseSchema(access_token=new_access_token, type="bearer")
+
+
+============================================================
+PATH: app/api/v1/user/hotels_router.py
+============================================================
+
+from typing import Annotated, Sequence
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.hotel import Hotels
+from app.repo.hotels_repo import HotelsRepo
+from app.schemas.hotels_schemas import HotelSearchFilters, HotelsListResponseSchema, HotelsResponseSchema
+from app.settings.database import get_db
+from app.utils.response_parser import create_hotel_response
+
+hotels_router = APIRouter(prefix="/hotels", tags=["Hotels"])
+
+
+@hotels_router.get("/", summary="Get hotels by filters", response_model=HotelsListResponseSchema)
+async def get_hotels_by_filters(body: Annotated[HotelSearchFilters, Query()], session: AsyncSession = Depends(get_db)) -> HotelsListResponseSchema:
+    hotels: Sequence[Hotels] | None = await HotelsRepo.find_hotel_by_filters(filters=body, session=session)
+
+    if hotels:
+        return HotelsListResponseSchema(hotels=hotels, total=len(hotels))
+
+    return HotelsListResponseSchema(hotels=[], total=0)
+
+
+@hotels_router.get("/{hotel_id}", summary="Get hotel by id", response_model=HotelsResponseSchema)
+async def get_hotel_by_id(hotel_id: int, session: AsyncSession = Depends(get_db)) -> HotelsResponseSchema | None:
+    hotel: Hotels | None = await HotelsRepo.find_by_id(id_to_find=hotel_id, session=session)
+
+    if hotel:
+        return HotelsResponseSchema.model_validate(hotel_obj=hotel)
+
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Hotel with id {hotel_id} was not found")
+
+
+============================================================
+PATH: app/api/v1/user/bookings_router.py
+============================================================
+
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.api.v1.requests import send_approving_request
+from app.auth.jwt_gen import get_current_user
+from app.models.booking import Bookings
+from app.models.user import Users
+from app.repo.bookings_repo import BookingsRepo
+from app.schemas.bookings_schemas import (
+    BookingsPreparationSchema,
+    BookingsResponseSchema,
+)
+from app.services.booking_service import BookingService
+from app.settings.database import get_db
+from app.utils.response_parser import create_booking_response
+
+booking_service = BookingService()
+
+bookings_router = APIRouter(prefix="/bookings", tags=["Bookings"])
+
+
+@bookings_router.post("/", summary="Create booking (Only logined users)", response_model=BookingsResponseSchema)
+async def create_booking(
+    body: BookingsPreparationSchema,
+    background_tasks: BackgroundTasks,
+    session: AsyncSession = Depends(get_db),
+    current_user: Users = Depends(get_current_user),
+) -> BookingsResponseSchema:
+    new_booking: Bookings | None = await booking_service.new_booking(user_id=current_user.id, dto=body, session=session)
+
+    if new_booking:
+        booking_obj = BookingsResponseSchema(
+            **body.model_dump(),
+            user_id=current_user.id,
+            id=new_booking.id,
+            created_at=new_booking.created_at,
+            total_price=new_booking.total_price,
+        )
+
+        background_tasks.add_task(send_approving_request, booking_obj)
+
+        return booking_obj
+
+    raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Room is not available for dates {body.check_in}-{body.check_out}")
+
+
+@bookings_router.get("/", summary="Get all user bookings (Only bookings created by current user)", response_model=BookingsResponseSchema)
+async def get_booking_by_user(session: AsyncSession = Depends(get_db), current_user: Users = Depends(get_current_user)) -> BookingsResponseSchema:
+    booking: Bookings | None = await BookingsRepo.find_all_my_bookings(session=session, current_user_id=current_user.id)
+
+    if booking:
+        return BookingsResponseSchema.model_validate(booking)
+
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Bookings was not found")
+
+
+@bookings_router.get("/{booking_id}", summary="Get booking by id (Only bookings created by current user)", response_model=BookingsResponseSchema)
+async def get_booking_by_id(
+    booking_id: int, session: AsyncSession = Depends(get_db), current_user: Users = Depends(get_current_user)
+) -> BookingsResponseSchema:
+    booking: Bookings | None = await BookingsRepo.find_my_booking_by_id(session=session, current_user_id=current_user.id, booking_id=booking_id)
+
+    if booking:
+        return BookingsResponseSchema.model_validate(booking)
+
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Booking with id {booking_id} was not found")
+
+
+@bookings_router.patch("/{booking_id}/cancel", summary="Cancel user booking by id (Only logined users)", response_model=BookingsResponseSchema)
+async def cancel_booking_by_id(
+    booking_id: int, current_user: Users = Depends(get_current_user), session: AsyncSession = Depends(get_db)
+) -> BookingsResponseSchema:
+    canceled_booking: Bookings | None = await BookingsRepo.cancel_my_booking_by_id(
+        booking_id=booking_id, session=session, current_user_id=current_user.id
+    )
+
+    if canceled_booking:
+        return BookingsResponseSchema.model_validate(booking_obj=canceled_booking)
+
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Booking with id {booking_id} was not found")
+
+
+
+============================================================
+PATH: app/api/v1/user/users_router.py
+============================================================
+
+from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.auth.jwt_gen import get_current_user
+from app.models.user import Users
+from app.schemas.users_schemas import UsersResponseSchema
+from app.settings.database import get_db
+from app.utils.response_parser import create_user_response
+
+users_router = APIRouter(prefix="/users", tags=["Users"])
+
+
+@users_router.get("/me", summary="Get users profile (only logined users)", response_model=UsersResponseSchema)
+async def get_users_profile(current_user: Users = Depends(get_current_user), session: AsyncSession = Depends(get_db)) -> UsersResponseSchema:
+    return UsersResponseSchema.model_validate(current_user)
+
+
+============================================================
+PATH: app/api/v1/admin/admin_users_router.py
+============================================================
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.auth.jwt_gen import get_current_admin_user
+from app.models.user import Users
+from app.repo.users_repo import AdminUsersRepo
+from app.schemas.users_schemas import UsersCreateSchema, UsersResponseSchema, UserStatsResponseSchema
+from app.settings.database import get_db
+from app.utils.response_parser import create_user_response
+
+admin_users_router = APIRouter(prefix="/admin/users", tags=["Admin"], dependencies=[Depends(get_current_admin_user)])
+
+
+@admin_users_router.post("/", summary="Create user (Admin)", response_model=UsersResponseSchema)
+async def admin_create_user(body: UsersCreateSchema, session: AsyncSession = Depends(get_db)) -> UsersResponseSchema:
+    new_user: Users | None = await AdminUsersRepo.create(session=session, inserting_data_dto=body)
+
+    if new_user:
+        return UsersResponseSchema.model_validate(new_user)
+
+    raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="User not created, Back-end error.")
+
+
+@admin_users_router.delete("/{user_id}", summary="Delete user by id (Admin)", response_model=UsersResponseSchema)
+async def admin_delete_user(user_id: int, session: AsyncSession = Depends(get_db)) -> UsersResponseSchema:
+    deleted_user: Users | None = await AdminUsersRepo.admin_delete_by_id(id_to_delete=user_id, session=session)
+
+    if deleted_user:
+        return UsersResponseSchema.model_validate(deleted_user)
+
+    raise HTTPException(status_code=404, detail=f"User with id {user_id} was not found")
+
+
+@admin_users_router.get("/{user_id}", summary="Get user by id (Admin)", response_model=UsersResponseSchema)
+async def admin_get_user_by_id(user_id: int, session: AsyncSession = Depends(get_db)) -> UsersResponseSchema:
+    user: Users | None = await AdminUsersRepo.admin_find_by_id(session=session, id_to_find=user_id)
+
+    if user:
+        return UsersResponseSchema.model_validate(user)
+
+    raise HTTPException(status_code=404, detail=f"User with id {user_id} was not found")
+
+
+@admin_users_router.get("/{user_id}/bookings", summary="Get users bookings (Admin)", response_model=UserStatsResponseSchema)
+async def admin_get_user_stats(user_id: int, session: AsyncSession = Depends(get_db)) -> UserStatsResponseSchema:
+    users_stats: UserStatsResponseSchema | None = await AdminUsersRepo.admin_get_users_stats(user_id=user_id, session=session)
+
+    if users_stats:
+        return users_stats
+
+    raise HTTPException(status_code=404, detail=f"User with id {user_id} was not found")
+
+
+============================================================
+PATH: app/api/v1/admin/admin_hotels_router.py
+============================================================
+
+from typing import Sequence
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.auth.jwt_gen import get_current_admin_user
+from app.models.hotel import Hotels
+from app.repo.hotels_repo import AdminHotelsRepo
+from app.schemas.hotels_schemas import (
+    HotelEditSchema,
+    HotelsCreateListResponseSchema,
+    HotelsCreateListSchema,
+    HotelsCreateSchema,
+    HotelsResponseSchema,
+)
+from app.settings.database import get_db
+
+admin_hotels_router = APIRouter(prefix="/admin/hotels", tags=["Admin"], dependencies=[Depends(get_current_admin_user)])
+
+
+@admin_hotels_router.get("/{hotel_id}", summary="Get hotel by id (Admin)", response_model=HotelsResponseSchema)
+async def admin_get_hotel_by_id(hotel_id: int, session: AsyncSession = Depends(get_db)) -> HotelsResponseSchema | None:
+    hotel: Hotels | None = await AdminHotelsRepo.admin_find_by_id(id_to_find=hotel_id, session=session)
+
+    if hotel:
+        return HotelsResponseSchema.model_validate(hotel_obj=hotel)
+
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Hotel with id {hotel_id} was not found")
+
+
+@admin_hotels_router.post("/", summary="Create hotel (Admin)", response_model=HotelsResponseSchema)
+async def admin_create_hotel(body: HotelsCreateSchema, session: AsyncSession = Depends(get_db)) -> HotelsResponseSchema:
+    new_hotel: Hotels | None = await AdminHotelsRepo.create(session=session, inserting_data_dto=body)
+
+    if new_hotel:
+        return HotelsResponseSchema.model_validate(hotel_obj=new_hotel)
+
+    raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Hotel not created, Back-end error.")
+
+
+@admin_hotels_router.post("/massive", summary="Multi create hotel (Admin)", response_model=HotelsCreateListResponseSchema)
+async def admin_massive_create_hotel(body: HotelsCreateListSchema, session: AsyncSession = Depends(get_db)) -> HotelsCreateListResponseSchema:
+    new_hotels: Sequence[Hotels] | None = await AdminHotelsRepo.multi_create(session=session, inserting_data_list_dto=body)
+
+    if new_hotels:
+        return HotelsCreateListResponseSchema(hotels_list=[HotelsResponseSchema.model_validate(hotel) for hotel in new_hotels])
+
+    raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Hotel not created, Back-end error.")
+
+
+@admin_hotels_router.delete("/{hotel_id}", summary="Delete hotel by id (Admin)", response_model=HotelsResponseSchema)
+async def admin_delete_hotel_by_id(hotel_id: int, session: AsyncSession = Depends(get_db)) -> HotelsResponseSchema | None:
+    deleted_hotel: Hotels | None = await AdminHotelsRepo.admin_delete_by_id(session=session, id_to_delete=hotel_id)
+
+    if deleted_hotel:
+        return HotelsResponseSchema.model_validate(hotel_obj=deleted_hotel)
+
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Hotel with id {hotel_id} was not found")
+
+
+@admin_hotels_router.patch("/{hotel_id}", summary="Edit hotel info (Admin)", response_model=HotelsResponseSchema)
+async def edit_hotel_info(hotel_id: int, body: HotelEditSchema, session: AsyncSession = Depends(get_db)) -> HotelsResponseSchema:
+    edited_hotel: Hotels | None = await AdminHotelsRepo.admin_edit_hotel_info(hotel_id=hotel_id, session=session, info_to_edit=body)
+
+    if edited_hotel:
+        return HotelsResponseSchema.model_validate(edited_hotel)
+
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Hotel with id {hotel_id} was not found")
+
+
+============================================================
+PATH: app/api/v1/admin/admin_rooms_router.py
+============================================================
+
+from typing import Sequence
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.auth.jwt_gen import get_current_admin_user
+from app.models.hotel import Rooms
+from app.repo.rooms_repo import AdminRoomsRepo
+from app.schemas.rooms_schemas import RoomEditSchema, RoomsCreateSchema, RoomsResponseSchema
+from app.settings.database import get_db
+
+admin_rooms_router = APIRouter(prefix="/admin/rooms", tags=["Admin"], dependencies=[Depends(get_current_admin_user)])
+
+
+@admin_rooms_router.get("/{hotel_id}", summary="Get room by id (Admin)", response_model=RoomsResponseSchema)
+async def admin_get_room_by_id(hotel_id: int, session: AsyncSession = Depends(get_db)) -> RoomsResponseSchema | None:
+    hotel: Rooms | None = await AdminRoomsRepo.admin_find_by_id(id_to_find=hotel_id, session=session)
+
+    if hotel:
+        return RoomsResponseSchema.model_validate(hotel)
+
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Hotel with id {hotel_id} was not found")
+
+
+@admin_rooms_router.post("/", summary="Create room (Admin)", response_model=RoomsResponseSchema)
+async def admin_create_room(body: RoomsCreateSchema, session: AsyncSession = Depends(get_db)) -> RoomsResponseSchema | None:
+    new_room: Rooms | None = await AdminRoomsRepo.create(session=session, inserting_data_dto=body)
+
+    if new_room:
+        return RoomsResponseSchema.model_validate(room_obj=new_room)
+
+    raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Client not created, Back-end error.")
+
+
+@admin_rooms_router.post("/massive", summary="Multi create room (Admin)", response_model=Sequence[RoomsResponseSchema])
+async def admin_multi_create_room(body: list[RoomsCreateSchema], session: AsyncSession = Depends(get_db)) -> Sequence[RoomsResponseSchema]:
+    new_rooms: Sequence[Rooms] | None = await AdminRoomsRepo.multi_create(session=session, inserting_data_list_dto=body)
+
+    if new_rooms:
+        return [RoomsResponseSchema.model_validate(room) for room in new_rooms]
+
+    raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Client not created, Back-end error.")
+
+
+@admin_rooms_router.delete("/{room_id}", summary="Delete room by id (Admin)", response_model=RoomsResponseSchema)
+async def admin_delete_room_by_id(room_id: int, session: AsyncSession = Depends(get_db)) -> RoomsResponseSchema | None:
+    deleted_room: Rooms | None = await AdminRoomsRepo.admin_delete_by_id(session=session, id_to_delete=room_id)
+
+    if deleted_room:
+        return RoomsResponseSchema.model_validate(room_obj=deleted_room)
+
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Room with id {room_id} was not found")
+
+
+@admin_rooms_router.patch("/{room_id}", summary="Edit room info (Admin)", response_model=RoomsResponseSchema)
+async def edit_room_info(room_id: int, body: RoomEditSchema, session: AsyncSession = Depends(get_db)) -> RoomsResponseSchema:
+    edited_room: Rooms | None = await AdminRoomsRepo.admin_edit_room_info(room_id=room_id, session=session, info_to_edit=body)
+
+    if edited_room:
+        return RoomsResponseSchema.model_validate(edited_room)
+
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Room with id {room_id} was not found")
+
+
+============================================================
+PATH: app/api/v1/admin/admin_bookings_router.py
+============================================================
+
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.auth.jwt_gen import get_current_admin_user
+from app.models.booking import Bookings
+from app.repo.bookings_repo import AdminBookingsRepo
+from app.schemas.bookings_schemas import BookingsResponseSchema, BookingsStatsRequestSchema, BookingStatsResponseSchema, BookingStatus
+from app.services.booking_service import BookingService
+from app.settings.database import get_db
+
+booking_service = BookingService()
+
+admin_bookings_router = APIRouter(prefix="/admin/bookings", tags=["Admin"], dependencies=[Depends(get_current_admin_user)])
+
+
+@admin_bookings_router.get("/{booking_id}", summary="Get booking by id (Admin)", response_model=BookingsResponseSchema)
+async def admin_get_booking_by_id(booking_id: int, session: AsyncSession = Depends(get_db)) -> BookingsResponseSchema | None:
+    booking: Bookings | None = await AdminBookingsRepo.admin_find_by_id(session=session, booking_id=booking_id)
+
+    if booking:
+        return BookingsResponseSchema.model_validate(booking)
+
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Booking with id {booking_id} was not found")
+
+
+@admin_bookings_router.patch("/{booking_id}/status", summary="Change booking status (Admin)", response_model=BookingsResponseSchema)
+async def admin_change_booking_status(
+    booking_id: int, new_status: str = Query(), session: AsyncSession = Depends(get_db)
+) -> BookingsResponseSchema | None:
+    booking: Bookings | None = await AdminBookingsRepo.admin_change_booking_status(
+        booking_id=booking_id, new_status=BookingStatus(new_status), session=session
+    )
+
+    if booking:
+        return BookingsResponseSchema.model_validate(booking)
+
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Booking with id {booking_id} was not found")
+
+
+@admin_bookings_router.delete("/{booking_id}", summary="Delete booking by id (Admin)", response_model=BookingsResponseSchema)
+async def admin_delete_booking_by_id(booking_id: int, session: AsyncSession = Depends(get_db)) -> BookingsResponseSchema:
+    deleted_booking: Bookings | None = await AdminBookingsRepo.admin_delete_booking(session=session, booking_id=booking_id)
+
+    if deleted_booking:
+        return BookingsResponseSchema.model_validate(deleted_booking)
+
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Booking with id {booking_id} was not found")
+
+
+@admin_bookings_router.get(
+    "/stats", summary="Get bookings start by period, rooms, hotels (Admin)", tags=["Admin Analytics"], response_model=BookingStatsResponseSchema
+)
+async def get_booking_stats(
+    filters: Annotated[BookingsStatsRequestSchema, Query()], session: AsyncSession = Depends(get_db)
+) -> BookingStatsResponseSchema:
+    bookings_stats: BookingStatsResponseSchema | None = await AdminBookingsRepo.admin_get_bookings_stats(filters=filters, session=session)
+
+    if bookings_stats:
+        return bookings_stats
+
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Nothing found by filters")
+
+
+============================================================
+PATH: app/schemas/hotels_schemas.py
+============================================================
+
+from typing import Annotated, Self, Sequence
+
+from pydantic import BaseModel, Field, model_validator, ConfigDict
+
+RatingValid = Annotated[int, Field(ge=1, le=5)]
+
+
+class HotelsSchema(BaseModel):
+    name: str
+    country: str
+    city: str
+    rating: RatingValid
+
+
+class HotelsResponseSchema(BaseModel):
+    id: int
+    name: str
+    country: str
+    city: str
+    rating: RatingValid
+
+    model_config = ConfigDict(from_attributes=True)
+
+class HotelsCreateSchema(BaseModel):
+    name: str
+    country: str
+    city: str
+    rating: RatingValid
+
+
+class HotelsCreateListSchema(BaseModel):
+    hotels_list: Sequence[HotelsCreateSchema]
+
+
+class HotelsCreateListResponseSchema(BaseModel):
+    hotels_list: Sequence[HotelsResponseSchema]
+
+
+class HotelsListResponseSchema(BaseModel):
+    hotels: Sequence[HotelsResponseSchema]
+    total: int | None
+
+    @model_validator(mode="after")
+    def calculate_total(self) -> Self:
+        hotels_length = len(self.hotels)
+
+        if not self.total or self.total != hotels_length:
+            self.total = hotels_length
+
+        return self
+
+
+class HotelSearchFilters(BaseModel):
+    country: str | None = None
+    city: str | None = None
+    min_rating: RatingValid | None = None
+    max_rating: RatingValid | None = None
+
+
+class HotelEditSchema(BaseModel):
+    name: str | None = None
+    country: str | None = None
+    city: str | None = None
+    rating: RatingValid | None = None
+
+
+============================================================
+PATH: app/schemas/bookings_schemas.py
+============================================================
+
+from datetime import datetime, timedelta, timezone
+from enum import Enum
+from typing import Self
+
+from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
+
+
+class BookingStatus(str, Enum):
+    booked = "booked"
+    pending = "pending"
+    checked_in = "checked in"
+    completed = "completed"
+    canceled = "canceled"
+
+
+class BookingsBaseSchema(BaseModel):
+    room_id: int
+    check_in: datetime
+    check_out: datetime
+
+    @field_validator("check_in")
+    @classmethod
+    def validate_date(cls, date: datetime) -> datetime:
+        if date <= datetime.now(tz=timezone.utc):
+            raise ValueError("BookingsSchema ERROR: Value 'check_in' must be later than now!")
+        return date
+
+    @model_validator(mode="after")
+    def validate_check_out(self) -> Self:
+        if self.check_out < self.check_in + timedelta(days=1):
+            raise ValueError("BookingsSchema ERROR: Value 'check_out' must be later than check in plus 1 day!")
+        return self
+
+
+class BookingsPreparationSchema(BookingsBaseSchema):
+    pass
+
+
+class BookingsCreateSchema(BookingsBaseSchema):
+    user_id: int
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    total_price: int = Field(ge=0)
+    status: BookingStatus
+
+
+class BookingsResponseSchema(BookingsBaseSchema):
+    id: int
+    user_id: int
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    total_price: int = Field(ge=0)
+
+    model_config = ConfigDict(from_attributes=True)
+
+    
+class AvailabilityForBookingResponseSchema(BookingsBaseSchema):
+    is_available: bool
+
+
+class AvailabilityForBookingRequestSchema(BookingsBaseSchema):
+    pass
+
+
+class ChangeBookingStatusSchema(BaseModel):
+    id: int
+    status: BookingStatus
+
+
+class BookingsStatsRequestSchema(BaseModel):
+    created_after: datetime | None = None
+    created_before: datetime | None = None
+    room_id: int | None = None
+    hotel_id: int | None = None
+
+    @classmethod
+    @field_validator("created_after", "created_before", mode="after")
+    def validate_timezone(cls, value: datetime) -> datetime:
+        if value:
+            if value.tzinfo is None:
+                return value.replace(tzinfo=timezone.utc)
+
+            return value.astimezone(timezone.utc)
+
+        return value
+
+    @model_validator(mode="after")
+    def validate_model(self) -> Self:
+        if self.created_after and self.created_before:
+            if self.created_after >= self.created_before:
+                raise ValueError("Created after must be less than created before!")
+
+        if (self.created_after and self.created_after >= datetime.now(tz=timezone.utc)) or (
+            self.created_before and self.created_before >= datetime.now(tz=timezone.utc)
+        ):
+            raise ValueError("Created after AND created before must be less than now!")
+
+        return self
+
+
+class BookingStatsResponseSchema(BaseModel):
+    total_bookings: int
+    total_completed_bookings: int
+    total_canceled_bookings: int
+    total_checked_in_bookings: int
+    total_booked_bookings: int
+    total_pending_bookings: int
+
+
+============================================================
+PATH: app/schemas/bot_schemas.py
+============================================================
+
+from pydantic import BaseModel
+
+from app.schemas.bookings_schemas import BookingsResponseSchema
+
+
+class BookingApproveRequestSchema(BaseModel):
+    booking_info: BookingsResponseSchema
+    hotel_id: int
+
+
+class BookingApproveProcessSchema(BookingApproveRequestSchema):
+    pass
+
+
+class BookingApproveResponseSchema(BaseModel):
+    approving_result: bool
+    booking_id: int
+
+
+============================================================
+PATH: app/schemas/users_schemas.py
+============================================================
+
+from typing import Self
+
+from pydantic import BaseModel, EmailStr, Field, model_validator, ConfigDict
+
+from app.schemas.bookings_schemas import BookingsResponseSchema
+
+
+class UserBaseSchema(BaseModel):
+    full_name: str
+    phone_number: str
+    email: EmailStr
+
+
+class UsersCreateSchema(UserBaseSchema):
+    hashed_password: bytes
+
+
+class UsersResponseSchema(UserBaseSchema):
+    id: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class UsersListResponseSchema(BaseModel):
+    users: list[UsersResponseSchema]
+    total: int | None = None
+
+    @model_validator(mode="after")
+    def calculate_total(self) -> Self:
+        users_length = len(self.users)
+
+        if not self.total or self.total != users_length:
+            self.total = users_length
+
+        return self
+
+
+class UserStatsResponseSchema(BaseModel):
+    users_bookings: list[BookingsResponseSchema]
+    total_orders_price: int = Field(ge=0)
+    total_bookings: int = Field(ge=0)
+    total_completed_bookings: int = Field(ge=0)
+    total_canceled_bookings: int = Field(ge=0)
+    total_checked_in_bookings: int = Field(ge=0)
+    total_booked_bookings: int = Field(ge=0)
+    total_pending_bookings: int = Field(ge=0)
+
+
+============================================================
+PATH: app/schemas/rooms_schemas.py
+============================================================
+
+from datetime import datetime, timedelta, timezone
+from enum import Enum
+from typing import Annotated, Self
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+
+from app.schemas.hotels_schemas import RatingValid
+
+CapacityValid = Annotated[int, Field(ge=1, le=3)]
+PriceValid = Annotated[int, Field(ge=0)]
+
+
+class RoomCategory(str, Enum):
+    standart = "standart"
+    superior = "superior"
+    lux = "lux"
+    presidental = "presidental"
+
+
+class RoomBaseSchema(BaseModel):
+    hotel_id: int
+    category: RoomCategory
+    capacity: CapacityValid
+    price_per_night: PriceValid
+
+
+class RoomsSchema(RoomBaseSchema):
+    pass
+
+
+class RoomsCreateSchema(RoomBaseSchema):
+    pass
+
+
+class RoomsResponseSchema(RoomBaseSchema):
+    id: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class RoomsListResponseSchema(BaseModel):
+    rooms: list[RoomsResponseSchema]
+    total: int | None
+
+    @model_validator(mode="after")
+    def calculate_total(self) -> Self:
+        rooms_length = len(self.rooms)
+
+        if not self.total or self.total != rooms_length:
+            self.total = rooms_length
+
+        return self
+
+
+class RoomSearchFilters(BaseModel):
+    country: str | None = None
+
+    city: str | None = None
+
+    min_rating: RatingValid | None = None
+    max_rating: RatingValid | None = None
+
+    category: RoomCategory | None = None
+
+    min_capacity: CapacityValid | None = None
+    max_capacity: CapacityValid | None = None
+
+    min_price: PriceValid | None = None
+    max_price: PriceValid | None = None
+
+    check_in: datetime | None = None
+    check_out: datetime | None = None
+
+    @field_validator("check_in")
+    def validate_date(cls, date: datetime) -> datetime:
+        if date <= datetime.now(tz=timezone.utc):
+            raise ValueError("RoomSearchFilters ERROR: Value 'check_in' must be later than now!")
+        return date
+
+    @model_validator(mode="after")
+    def validate_check_out(self) -> Self:
+        if self.min_rating and self.max_rating and self.min_rating >= self.max_rating:
+            raise ValueError("RoomSearchFilters ERROR: Value 'min_rating' must be less than 'max_rating'!")
+
+        if self.min_capacity and self.max_capacity and self.min_capacity >= self.max_capacity:
+            raise ValueError("RoomSearchFilters ERROR: Value 'min_capacity' must be less than 'max_capacity'!")
+
+        if self.min_price and self.max_price and self.min_price >= self.max_price:
+            raise ValueError("RoomSearchFilters ERROR: Value 'min_price' must be less than 'max_price'!")
+
+        if (self.check_out and self.check_in) and self.check_out < self.check_in + timedelta(days=1):
+            raise ValueError("RoomSearchFilters ERROR: Value 'check_out' must be later than check in plus 1 day!")
+        return self
+
+
+class RoomEditSchema(BaseModel):
+    hotel_id: int | None = None
+    category: RoomCategory | None = None
+    capacity: CapacityValid | None = None
+    price_per_night: PriceValid | None = None
+
+
+============================================================
+PATH: app/schemas/auth/hotel_bot_schemas.py
+============================================================
+
+from typing import Self
+
+import bcrypt
+from pydantic import BaseModel, model_validator
+
+
+class HotelPasswordSchema(BaseModel):
+    password: str
+    hashed_password: bytes | None = None
+
+    @model_validator(mode="after")
+    def hash_password(self) -> Self:
+        self.hashed_password = bcrypt.hashpw(self.password.encode("utf-8"), bcrypt.gensalt())
+
+        return self
+
+
+class HotelLoginSchema(BaseModel):
+    hotel_id: int
+    chat_id: str
+
+
+============================================================
+PATH: app/schemas/auth/users_auth_schemas.py
+============================================================
+
+from enum import Enum
+from typing import Self
+
+import bcrypt
+from pydantic import BaseModel, EmailStr, model_validator
+
+from app.schemas.users_schemas import UserBaseSchema
+
+
+class UsersRole(str, Enum):
+    CLIENT = "client"
+    ADMIN = "admin"
+
+
+class UserLoginRequestSchema(BaseModel):
+    password: str
+    email: EmailStr | None = None
+    phone_number: str | None = None
+
+
+class UserRegisterRequestSchema(UserBaseSchema):
+    password: str
+    hashed_password: bytes | None = None
+
+    @model_validator(mode="after")
+    def hash_password(self) -> Self:
+        self.hashed_password = bcrypt.hashpw(self.password.encode("utf-8"), bcrypt.gensalt())
+        return self
+
+
+class UserAuthResponseSchema(UserBaseSchema):
+    id: int
+    role: UsersRole
+    is_logined: bool
+    jwt_token: str
+
+
+class RefreshTokenRequestSchema(BaseModel):
+    refresh_token: str
+
+
+class RefreshTokenResponseSchema(BaseModel):
+    access_token: str
+    type: str
+
+
+============================================================
+PATH: app/background_tasks/celery_worker.py
+============================================================
+
+from celery import Celery
+
+from app.settings.config import redis_settings
+
+celery_app = Celery(
+    "booking_service_bg_tasks", broker=redis_settings.REDIS_url, backend=redis_settings.REDIS_url, include=["app.background_tasks.tasks"]
+)
+
+
+============================================================
+PATH: app/background_tasks/tasks.py
+============================================================
+
+import asyncio
+from datetime import datetime, timezone
+
+from celery.schedules import crontab
+
+from app.background_tasks.background_processes import BackgroundProcesses
+from app.background_tasks.celery_worker import celery_app
+
+
+@celery_app.task(name="delete_pending_bookings")  # type: ignore
+def delete_pending_bookings() -> str:
+    asyncio.run(BackgroundProcesses.background_bookings_cleaner())
+
+    return f"Pending bookings cleaned. Time: {datetime.now(tz=timezone.utc)}"
+
+
+@celery_app.task(name="repair_bookings_status")  # type: ignore
+def repair_bookings_status() -> str:
+    asyncio.run(BackgroundProcesses.background_status_checker())
+    return f"Completed and Checked In bookings statuses changed. Time: {datetime.now(tz=timezone.utc)}"
+
+
+celery_app.conf.beat_schedule = {
+    "check_delete_pending_bookings_15min": {"task": "delete_pending_bookings", "schedule": crontab(minute="*/15")},
+    "change_completed_and_checkedin_bookings_status": {"task": "repair_bookings_status", "schedule": crontab(minute=0, hour=4)},
+}
+
+
+============================================================
+PATH: app/background_tasks/background_processes.py
+============================================================
+
+import datetime
+
+from sqlalchemy import delete, update
+
+from app.models.booking import Bookings
+from app.settings.database import celery_session_factory
+
+
+class BackgroundProcesses:
+    @staticmethod
+    async def background_bookings_cleaner() -> None:
+        try:
+            async with celery_session_factory.begin() as session:
+                time_gap = datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(minutes=15)
+                query = delete(Bookings).where(Bookings.status == "pending", Bookings.created_at < time_gap)
+
+                await session.execute(query)
+
+        except Exception as e:
+            print(f"Background bookings cleaner ERROR: {e}")
+
+    @staticmethod
+    async def background_status_checker() -> None:
+        try:
+            async with celery_session_factory.begin() as session:
+                current_time = datetime.datetime.now(tz=datetime.timezone.utc)
+
+                check_out_query = update(Bookings).values(status="completed").where(Bookings.check_out < current_time)
+                check_in_query = update(Bookings).values(status="checked in").where(Bookings.check_in < current_time)
+
+                await session.execute(check_out_query)
+                await session.execute(check_in_query)
+
+        except Exception as e:
+            print(f"Background status checker ERROR: {e}")
+
+
+============================================================
+PATH: app/settings/redis.py
+============================================================
+
+from typing import AsyncGenerator
+
+import redis.asyncio as redis
+
+from app.settings.config import redis_settings
+
+redis_client = redis.from_url(redis_settings.REDIS_url, decode_responses=True)
+
+
+async def get_redis() -> AsyncGenerator[redis.Redis, None]:
+    try:
+        yield redis_client
+
+    finally:
+        pass
+
+
+============================================================
+PATH: app/settings/config.py
+============================================================
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+
+class DatabaseSettings(Settings):
+    DB_USER: str
+    DB_NAME: str
+    DB_PASS: str
+    DB_HOST: str
+    DB_PORT: int
+
+    @property
+    def DATABASE_async_url(self) -> str:
+        url = f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASS}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+        return url
+
+
+class JwtSettings(Settings):
+    SECRET_KEY: str
+
+    @property
+    def secret_key(self) -> str:
+        return self.SECRET_KEY
+
+
+class RedisSettings(Settings):
+    REDIS_HOST: str
+    REDIS_PORT: int
+
+    @property
+    def REDIS_url(self) -> str:
+        return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/0"
+
+
+class BotSettings(Settings):
+    BOT_TOKEN: str
+    BOT_PORT: int
+    BOT_HOST: str
+    EXTERNAL_REQUEST_PATH: str
+    BOT_URL: str
+
+    @property
+    def TOKEN(self) -> str:
+        return self.BOT_TOKEN
+
+    @property
+    def PORT(self) -> int:
+        return self.BOT_PORT
+
+    @property
+    def HOST(self) -> str:
+        return self.BOT_HOST
+
+    @property
+    def EXT_REQ_PATH(self) -> str:
+        return self.EXTERNAL_REQUEST_PATH
+
+    @property
+    def URL(self) -> str:
+        return self.BOT_URL
+
+
+class NgrokSettings(Settings):
+    NGROK_AUTHTOKEN: str
+
+    @property
+    def NGROK_TOKEN(self) -> str:
+        return self.NGROK_AUTHTOKEN
+
+
+class EmailSettings(Settings):
+    SERVICE_EMAIL: str
+    APP_PASSWORD: str
+
+    @property
+    def EMAIL(self) -> str:
+        return self.SERVICE_EMAIL
+
+    @property
+    def PASSWORD(self) -> str:
+        return self.APP_PASSWORD
+
+
+database_settings = DatabaseSettings()
+jwt_settings = JwtSettings()
+redis_settings = RedisSettings()
+bot_settings = BotSettings()
+ngrok_settings = NgrokSettings()
+email_settings = EmailSettings()
+
+
+============================================================
+PATH: app/settings/database.py
+============================================================
+
+from typing import AsyncGenerator
+
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
+
+from app.settings.config import database_settings
+
+async_engine: AsyncEngine = create_async_engine(url=database_settings.DATABASE_async_url, echo=False, pool_size=5, max_overflow=10)
+
+async_session_factory = async_sessionmaker(async_engine, expire_on_commit=False)
+
+celery_engine: AsyncEngine = create_async_engine(url=database_settings.DATABASE_async_url, echo=False, pool_size=1)
+celery_session_factory = async_sessionmaker(celery_engine, expire_on_commit=False)
+
+
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    async with async_session_factory.begin() as session:
+        yield session
+
+
+============================================================
+PATH: app/utils/email_sender.py
+============================================================
+
+from email.message import EmailMessage
+
+import aiosmtplib
+
+from app.models.booking import Bookings
+from app.models.user import Users
+from app.repo.bookings_repo import AdminBookingsRepo
+from app.repo.users_repo import AdminUsersRepo
+from app.settings.config import email_settings
+from app.settings.database import async_session_factory
+
+
+async def send_approving_email(result: bool, booking_id: int) -> None:
+
+    async with async_session_factory.begin() as session:
+        booking: Bookings | None = await AdminBookingsRepo.admin_find_by_id(session=session, booking_id=booking_id)
+
+        if booking:
+            user: Users | None = await AdminUsersRepo.admin_find_by_id(session=session, id_to_find=booking.user_id)
+
+            if user:
+                user_email = user.email
+
+            else:
+                return
+
+        else:
+            return
+
+    message = EmailMessage()
+    message["From"] = email_settings.EMAIL
+    message["To"] = user_email
+    message["Subject"] = "Booking Request Results 🏡"
+
+    if result:
+        message.set_content(f"Your booking request (№{booking_id}) has been approved! ✅\n\nWe are waiting for you! ⌛")
+
+    else:
+        message.set_content(f"Your booking request (№{booking_id}) has been rejected! ❌\n\nReason: Hotel personal reasons. Please, try later. ⌛")
+
+    try:
+        await aiosmtplib.send(
+            message, hostname="smtp.gmail.com", port=465, use_tls=True, username=email_settings.EMAIL, password=email_settings.PASSWORD
+        )
+
+    except Exception as e:
+        print(f"Email sending error: {e}")
+

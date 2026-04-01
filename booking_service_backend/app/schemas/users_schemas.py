@@ -1,6 +1,6 @@
 from typing import Self
 
-from pydantic import BaseModel, EmailStr, Field, model_validator
+from pydantic import BaseModel, EmailStr, Field, model_validator, ConfigDict
 
 from app.schemas.bookings_schemas import BookingsResponseSchema
 
@@ -17,6 +17,8 @@ class UsersCreateSchema(UserBaseSchema):
 
 class UsersResponseSchema(UserBaseSchema):
     id: int
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UsersListResponseSchema(BaseModel):

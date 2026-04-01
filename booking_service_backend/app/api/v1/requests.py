@@ -6,11 +6,12 @@ from app.repo.rooms_repo import AdminRoomsRepo
 from app.schemas.bookings_schemas import BookingsResponseSchema
 from app.schemas.bot_schemas import BookingApproveRequestSchema
 from app.settings.database import async_session_factory
+from app.settings.config import bot_settings
 
 
 async def send_approving_request(booking_info: BookingsResponseSchema) -> int | None:
-    url = "https://4a7f-195-211-138-69.ngrok-free.app/external-data"
-
+    url = bot_settings.URL
+    
     async with async_session_factory.begin() as session:
         room_info: Rooms | None = await AdminRoomsRepo.admin_find_by_id(id_to_find=booking_info.room_id, session=session)
 

@@ -40,7 +40,7 @@ class BotSettings(Settings):
     BOT_PORT: int
     BOT_HOST: str
     EXTERNAL_REQUEST_PATH: str
-    WEBHOOK_PATH: str
+    BOT_URL: str
 
     @property
     def TOKEN(self) -> str:
@@ -59,8 +59,8 @@ class BotSettings(Settings):
         return self.EXTERNAL_REQUEST_PATH
 
     @property
-    def WEBH_PATH(self) -> str:
-        return self.WEBHOOK_PATH
+    def URL(self) -> str:
+        return self.BOT_URL
 
 
 class NgrokSettings(Settings):

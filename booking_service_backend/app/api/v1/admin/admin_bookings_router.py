@@ -9,7 +9,6 @@ from app.repo.bookings_repo import AdminBookingsRepo
 from app.schemas.bookings_schemas import BookingsResponseSchema, BookingsStatsRequestSchema, BookingStatsResponseSchema, BookingStatus
 from app.services.booking_service import BookingService
 from app.settings.database import get_db
-from app.utils.response_parser import create_booking_response
 
 booking_service = BookingService()
 
@@ -21,7 +20,7 @@ async def admin_get_booking_by_id(booking_id: int, session: AsyncSession = Depen
     booking: Bookings | None = await AdminBookingsRepo.admin_find_by_id(session=session, booking_id=booking_id)
 
     if booking:
-        return create_booking_response(booking)
+        return BookingsResponseSchema.model_validate(booking)
 
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Booking with id {booking_id} was not found")
 
@@ -35,7 +34,7 @@ async def admin_change_booking_status(
     )
 
     if booking:
-        return create_booking_response(booking)
+        return BookingsResponseSchema.model_validate(booking)
 
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Booking with id {booking_id} was not found")
 
@@ -45,7 +44,7 @@ async def admin_delete_booking_by_id(booking_id: int, session: AsyncSession = De
     deleted_booking: Bookings | None = await AdminBookingsRepo.admin_delete_booking(session=session, booking_id=booking_id)
 
     if deleted_booking:
-        return create_booking_response(deleted_booking)
+        return BookingsResponseSchema.model_validate(deleted_booking)
 
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Booking with id {booking_id} was not found")
 

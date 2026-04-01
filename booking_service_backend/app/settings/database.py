@@ -8,7 +8,7 @@ async_engine: AsyncEngine = create_async_engine(url=database_settings.DATABASE_a
 
 async_session_factory = async_sessionmaker(async_engine, expire_on_commit=False)
 
-celery_engine: AsyncEngine = create_async_engine(url=database_settings.DATABASE_async_url, echo=False, pool_size=5, max_overflow=10)
+celery_engine: AsyncEngine = create_async_engine(url=database_settings.DATABASE_async_url, echo=False, pool_size=1)
 celery_session_factory = async_sessionmaker(celery_engine, expire_on_commit=False)
 
 

@@ -28,7 +28,7 @@ class AdminUsersRepo(BaseAdminRepo[Users]):
 
     @staticmethod
     async def admin_find_by_contact_info(session: AsyncSession, email: str | None = None, phone_number: str | None = None) -> Users | None:
-        query = select(Users).where(Users.deleted_at is None)
+        query = select(Users).where(Users.deleted_at.is_(None))
 
         if email:
             query = query.where(Users.email == email)
@@ -37,7 +37,7 @@ class AdminUsersRepo(BaseAdminRepo[Users]):
             query = query.where(Users.phone_number == phone_number)
 
         result = await session.execute(query)
-        user = result.scalar()
+        user = result.scalar_one_or_none()
 
         return user
 

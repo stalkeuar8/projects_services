@@ -8,7 +8,6 @@ from app.models.hotel import Rooms
 from app.repo.rooms_repo import AdminRoomsRepo
 from app.schemas.rooms_schemas import RoomEditSchema, RoomsCreateSchema, RoomsResponseSchema
 from app.settings.database import get_db
-from app.utils.response_parser import create_room_response
 
 admin_rooms_router = APIRouter(prefix="/admin/rooms", tags=["Admin"], dependencies=[Depends(get_current_admin_user)])
 
@@ -18,7 +17,7 @@ async def admin_get_room_by_id(hotel_id: int, session: AsyncSession = Depends(ge
     hotel: Rooms | None = await AdminRoomsRepo.admin_find_by_id(id_to_find=hotel_id, session=session)
 
     if hotel:
-        return create_room_response(hotel)
+        return RoomsResponseSchema.model_validate(hotel)
 
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Hotel with id {hotel_id} was not found")
 
@@ -28,7 +27,7 @@ async def admin_create_room(body: RoomsCreateSchema, session: AsyncSession = Dep
     new_room: Rooms | None = await AdminRoomsRepo.create(session=session, inserting_data_dto=body)
 
     if new_room:
-        return create_room_response(room_obj=new_room)
+        return RoomsResponseSchema.model_validate(room_obj=new_room)
 
     raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Client not created, Back-end error.")
 
@@ -38,7 +37,7 @@ async def admin_multi_create_room(body: list[RoomsCreateSchema], session: AsyncS
     new_rooms: Sequence[Rooms] | None = await AdminRoomsRepo.multi_create(session=session, inserting_data_list_dto=body)
 
     if new_rooms:
-        return [create_room_response(room) for room in new_rooms]
+        return [RoomsResponseSchema.model_validate(room) for room in new_rooms]
 
     raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Client not created, Back-end error.")
 
@@ -48,7 +47,7 @@ async def admin_delete_room_by_id(room_id: int, session: AsyncSession = Depends(
     deleted_room: Rooms | None = await AdminRoomsRepo.admin_delete_by_id(session=session, id_to_delete=room_id)
 
     if deleted_room:
-        return create_room_response(room_obj=deleted_room)
+        return RoomsResponseSchema.model_validate(room_obj=deleted_room)
 
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Room with id {room_id} was not found")
 
@@ -58,6 +57,6 @@ async def edit_room_info(room_id: int, body: RoomEditSchema, session: AsyncSessi
     edited_room: Rooms | None = await AdminRoomsRepo.admin_edit_room_info(room_id=room_id, session=session, info_to_edit=body)
 
     if edited_room:
-        return create_room_response(edited_room)
+        return RoomsResponseSchema.model_validate(edited_room)
 
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Room with id {room_id} was not found")

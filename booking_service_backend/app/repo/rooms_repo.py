@@ -16,8 +16,8 @@ class RoomsRepo(BaseRepo[Rooms]):
 
     @staticmethod
     async def get_price_per_night(id_to_find: int, session: AsyncSession) -> int:
-        query = select(Rooms).where(Rooms.id == id_to_find).where(Rooms.deleted_at is None)
-        result = (await session.execute(query)).scalar()
+        query = select(Rooms).where(Rooms.id == id_to_find).where(Rooms.deleted_at.is_(None))
+        result = (await session.execute(query)).scalar_one_or_none()
 
         if result:
             price: int = result.price_per_night
@@ -28,7 +28,7 @@ class RoomsRepo(BaseRepo[Rooms]):
     @staticmethod
     async def find_room_by_filters(filters: RoomSearchFilters, session: AsyncSession) -> Sequence[Rooms]:
 
-        query = select(Rooms).join(Rooms.hotel).where(Rooms.deleted_at is None)
+        query = select(Rooms).join(Rooms.hotel).where(Rooms.deleted_at.is_(None))
 
         if filters.check_in and filters.check_out:
             subquery = select(Bookings.room_id).where(
@@ -79,7 +79,7 @@ class AdminRoomsRepo(BaseAdminRepo[Rooms]):
 
     @staticmethod
     async def admin_edit_room_info(room_id: int, session: AsyncSession, info_to_edit: RoomEditSchema) -> Rooms | None:
-        query = update(Rooms).where(Rooms.id == room_id).where(Rooms.deleted_at is None)
+        query = update(Rooms).where(Rooms.id == room_id).where(Rooms.deleted_at.is_(None))
 
         if info_to_edit.category:
             query = query.values(category=info_to_edit.category)
@@ -94,6 +94,6 @@ class AdminRoomsRepo(BaseAdminRepo[Rooms]):
             query = query.values(hotel_id=info_to_edit.hotel_id)
 
         result = await session.execute(query)
-        edited_room = result.scalar()
+        edited_room = result.scalar_one_or_none()
 
         return edited_room

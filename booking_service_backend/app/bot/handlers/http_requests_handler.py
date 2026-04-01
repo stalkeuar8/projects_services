@@ -88,15 +88,14 @@ async def process_approving_result(callback: types.CallbackQuery, callback_data:
                 await send_approving_email(result=False, booking_id=callback_data.booking_id)
 
         else:
-            async with async_session_factory.begin() as session:
-                canceled_booking: Bookings | None = await AdminBookingsRepo.admin_change_booking_status(
-                    session=session, booking_id=callback_data.booking_id, new_status=BookingStatus("canceled")
-                )
+            canceled_booking: Bookings | None = await AdminBookingsRepo.admin_change_booking_status(
+                session=session, booking_id=callback_data.booking_id, new_status=BookingStatus("canceled")
+            )
 
-                if canceled_booking:
-                    await callback.message.edit_text(text=f"Booking ID: {callback_data.booking_id}\n\nSTATUS: Canceled ❌")
+            if canceled_booking:
+                await callback.message.edit_text(text=f"Booking ID: {callback_data.booking_id}\n\nSTATUS: Canceled ❌")
 
-                else:
-                    await callback.message.edit_text(text="Error occured, booking will be canceled.")
+            else:
+                await callback.message.edit_text(text="Error occured, booking will be canceled.")
 
-                await send_approving_email(result=False, booking_id=callback_data.booking_id)
+            await send_approving_email(result=False, booking_id=callback_data.booking_id)

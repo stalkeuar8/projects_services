@@ -9,7 +9,7 @@ from app.models.hotel import HotelAdmins, Hotels
 from app.repo.base_admin_repo import BaseAdminRepo
 from app.repo.base_repo import BaseRepo
 from app.schemas.auth.hotel_bot_schemas import HotelLoginSchema
-from app.schemas.hotels_schemas import HotelEditSchema, HotelsCreateSchema, HotelSearchFilters
+from app.schemas.hotels_schemas import HotelEditSchema, HotelsCreateSchema, HotelSearchFilters, HotelsCreateListSchema
 
 
 class HotelsRepo(BaseRepo[Hotels]):
@@ -18,7 +18,7 @@ class HotelsRepo(BaseRepo[Hotels]):
     @staticmethod
     async def find_hotel_by_filters(filters: HotelSearchFilters, session: AsyncSession) -> Sequence[Hotels] | None:
 
-        query = select(Hotels).where(Hotels.deleted_at is None)
+        query = select(Hotels).where(Hotels.deleted_at.is_(None))
 
         if filters.country:
             query = query.where(Hotels.country == filters.country)
@@ -57,9 +57,10 @@ class AdminHotelsRepo(BaseAdminRepo[Hotels]):
         return new_obj
 
     @staticmethod
-    async def multi_create(session: AsyncSession, inserting_data_list_dto: Sequence[BaseModel]) -> Sequence[Hotels]:
+    async def multi_create(session: AsyncSession, inserting_data_list_dto: HotelsCreateListSchema) -> Sequence[Hotels]:
+        hotels: Sequence[HotelsCreateSchema] = inserting_data_list_dto.hotels_list
 
-        new_hotel_objs: Sequence[Hotels] = [Hotels(**obj_info.model_dump()) for obj_info in inserting_data_list_dto.hotels_list]
+        new_hotel_objs: Sequence[Hotels] = [Hotels(**hotel.model_dump()) for hotel in hotels]
 
         session.add_all(new_hotel_objs)
         await session.flush()
@@ -74,22 +75,28 @@ class AdminHotelsRepo(BaseAdminRepo[Hotels]):
 
     @staticmethod
     async def admin_edit_hotel_info(hotel_id: int, session: AsyncSession, info_to_edit: HotelEditSchema) -> Hotels | None:
-        query = update(Hotels).where(Hotels.id == hotel_id, Hotels.deleted_at is None)
+
+        if not info_to_edit:
+            return None
+        
+        query = update(Hotels).where(Hotels.id == hotel_id, Hotels.deleted_at.is_(None))
+        filters = {}
 
         if info_to_edit.country:
-            query = query.values(country=info_to_edit.country)
+            filters['country'] = info_to_edit.country
 
         if info_to_edit.city:
-            query = query.values(city=info_to_edit.city)
+            filters['city'] = info_to_edit.city
 
         if info_to_edit.rating:
-            query = query.values(rating=info_to_edit.rating)
+            filters['rating'] = info_to_edit.rating
 
         if info_to_edit.name:
-            query = query.values(name=info_to_edit.name)
+            filters['name'] = info_to_edit.name
 
+        query = query.values(**filters)
         result = await session.execute(query)
-        edited_hotel = result.scalar()
+        edited_hotel = result.scalar_one_or_none()
 
         return edited_hotel
 
@@ -100,7 +107,7 @@ class AdminBotHotelRepo:
         query = update(HotelAdmins).where(HotelAdmins.hotel_id == login_info.hotel_id).values(chat_id=login_info.chat_id).returning(HotelAdmins)
 
         result = await session.execute(query)
-        updated_info = result.scalar()
+        updated_info = result.scalar_one_or_none()
 
         return updated_info
 
@@ -109,25 +116,25 @@ class AdminBotHotelRepo:
         query = update(HotelAdmins).where(HotelAdmins.hotel_id == hotel_id).values(chat_id=None).returning(HotelAdmins)
 
         result = await session.execute(query)
-        updated_info = result.scalar()
+        updated_info = result.scalar_one_or_none()
 
         return updated_info
 
     @staticmethod
     async def get_hotel_admin_info(hotel_id: int, session: AsyncSession) -> HotelAdmins | None:
-        query = select(HotelAdmins).where(HotelAdmins.hotel_id == hotel_id).with_for_update(nowait=True)
+        query = select(HotelAdmins).where(HotelAdmins.hotel_id == hotel_id).with_for_update()
 
         result = await session.execute(query)
-        hotel = result.scalar()
+        hotel = result.scalar_one_or_none()
 
         return hotel
 
     @staticmethod
     async def get_hotel_info_by_chat_id(chat_id: str, session: AsyncSession) -> HotelAdmins | None:
-        query = select(HotelAdmins).where(HotelAdmins.chat_id == chat_id).with_for_update(nowait=True)
+        query = select(HotelAdmins).where(HotelAdmins.chat_id == chat_id).with_for_update()
 
         result = await session.execute(query)
-        hotel = result.scalar()
+        hotel = result.scalar_one_or_none()
 
         if hotel:
             return hotel

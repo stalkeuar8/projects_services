@@ -12,7 +12,6 @@ from app.schemas.bookings_schemas import (
 )
 from app.services.booking_service import BookingService
 from app.settings.database import get_db
-from app.utils.response_parser import create_booking_response
 
 booking_service = BookingService()
 
@@ -49,7 +48,7 @@ async def get_booking_by_user(session: AsyncSession = Depends(get_db), current_u
     booking: Bookings | None = await BookingsRepo.find_all_my_bookings(session=session, current_user_id=current_user.id)
 
     if booking:
-        return create_booking_response(booking)
+        return BookingsResponseSchema.model_validate(booking)
 
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Bookings was not found")
 
@@ -61,7 +60,7 @@ async def get_booking_by_id(
     booking: Bookings | None = await BookingsRepo.find_my_booking_by_id(session=session, current_user_id=current_user.id, booking_id=booking_id)
 
     if booking:
-        return create_booking_response(booking)
+        return BookingsResponseSchema.model_validate(booking)
 
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Booking with id {booking_id} was not found")
 
@@ -75,19 +74,7 @@ async def cancel_booking_by_id(
     )
 
     if canceled_booking:
-        return create_booking_response(booking_obj=canceled_booking)
+        return BookingsResponseSchema.model_validate(booking_obj=canceled_booking)
 
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Booking with id {booking_id} was not found")
 
-
-# # THINK ABOUT!!!
-# @bookings_router.get("/{room_id}/available", summary="Check room availability", response_model=AvailabilityForBookingRequestSchema)
-# async def check_room_availablity(
-#     params: Annotated[AvailabilityForBookingRequestSchema, Query()], session: AsyncSession = Depends(get_db)
-# ) -> AvailabilityForBookingResponseSchema | None:
-#     availability_result: bool | None = await booking_service.check_available(session=session, dto=params)
-
-#     if availability_result is not None:
-#         return AvailabilityForBookingResponseSchema(**params.model_dump(), is_available=availability_result)
-
-#     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Room with id {params.room_id} was not found")

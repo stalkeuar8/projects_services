@@ -33,9 +33,9 @@ class RoomsCreateSchema(RoomBaseSchema):
 
 
 class RoomsResponseSchema(RoomBaseSchema):
-    model_config = ConfigDict(from_attributes=True)
-
     id: int
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class RoomsListResponseSchema(BaseModel):

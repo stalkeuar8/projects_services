@@ -6,7 +6,6 @@ from app.models.user import Users
 from app.repo.users_repo import AdminUsersRepo
 from app.schemas.users_schemas import UsersCreateSchema, UsersResponseSchema, UserStatsResponseSchema
 from app.settings.database import get_db
-from app.utils.response_parser import create_user_response
 
 admin_users_router = APIRouter(prefix="/admin/users", tags=["Admin"], dependencies=[Depends(get_current_admin_user)])
 
@@ -16,7 +15,7 @@ async def admin_create_user(body: UsersCreateSchema, session: AsyncSession = Dep
     new_user: Users | None = await AdminUsersRepo.create(session=session, inserting_data_dto=body)
 
     if new_user:
-        return create_user_response(new_user)
+        return UsersResponseSchema.model_validate(new_user)
 
     raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="User not created, Back-end error.")
 
@@ -26,7 +25,7 @@ async def admin_delete_user(user_id: int, session: AsyncSession = Depends(get_db
     deleted_user: Users | None = await AdminUsersRepo.admin_delete_by_id(id_to_delete=user_id, session=session)
 
     if deleted_user:
-        return create_user_response(deleted_user)
+        return UsersResponseSchema.model_validate(deleted_user)
 
     raise HTTPException(status_code=404, detail=f"User with id {user_id} was not found")
 
@@ -36,7 +35,7 @@ async def admin_get_user_by_id(user_id: int, session: AsyncSession = Depends(get
     user: Users | None = await AdminUsersRepo.admin_find_by_id(session=session, id_to_find=user_id)
 
     if user:
-        return create_user_response(user)
+        return UsersResponseSchema.model_validate(user)
 
     raise HTTPException(status_code=404, detail=f"User with id {user_id} was not found")
 

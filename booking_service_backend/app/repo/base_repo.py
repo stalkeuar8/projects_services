@@ -15,11 +15,9 @@ class BaseRepo(Generic[T]):
     @classmethod
     async def find_by_id(cls, session: AsyncSession, id_to_find: int) -> T | None:
 
-        query = select(cls.model).where(cast(Any, cls.model.id) == id_to_find, cast(Any, cls.model.deleted_at) is None)
+        query = select(cls.model).where(cast(Any, cls.model.id) == id_to_find, cast(Any, cls.model.deleted_at).is_(None))
 
         result = await session.execute(query)
-        found_obj = result.scalar()
+        found_obj = result.scalar_one_or_none()
 
         return found_obj
-
-        raise ValueError()

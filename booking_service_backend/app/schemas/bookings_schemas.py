@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import Self
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
 
 
 class BookingStatus(str, Enum):
@@ -49,7 +49,9 @@ class BookingsResponseSchema(BookingsBaseSchema):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     total_price: int = Field(ge=0)
 
+    model_config = ConfigDict(from_attributes=True)
 
+    
 class AvailabilityForBookingResponseSchema(BookingsBaseSchema):
     is_available: bool
 
@@ -67,7 +69,7 @@ class BookingsStatsRequestSchema(BaseModel):
     created_after: datetime | None = None
     created_before: datetime | None = None
     room_id: int | None = None
-    hotel_id: int | None
+    hotel_id: int | None = None
 
     @classmethod
     @field_validator("created_after", "created_before", mode="after")

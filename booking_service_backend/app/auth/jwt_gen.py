@@ -1,4 +1,5 @@
 import uuid
+import redis.asyncio as redis
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -7,6 +8,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.settings.redis import get_redis
 from app.models.user import Users
 from app.repo.users_repo import AdminUsersRepo
 from app.settings.config import jwt_settings
@@ -22,7 +24,7 @@ def create_access_token(user_id: int) -> str:
     expires_at = datetime.now(tz=timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     jti = str(uuid.uuid4())
 
-    payload = {"sub": str(user_id), "exp": expires_at, "jti": jti}
+    payload = {"sub": str(user_id), "exp": expires_at, "jti": jti, "type": "access"}
 
     encoded_jwt = jwt.encode(payload=payload, key=SECRET_KEY, algorithm=ALGORITHM)
 
@@ -41,21 +43,31 @@ def decode_jwt(jwt_token: str) -> dict[str, Any]:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is invalid")
 
 
-async def get_current_user(jwt_token: str = Depends(oauth2_scheme), session: AsyncSession = Depends(get_db)) -> Users:
+async def get_current_user(jwt_token: str = Depends(oauth2_scheme), session: AsyncSession = Depends(get_db), redis = Depends(get_redis)) -> Users:
     payload = decode_jwt(jwt_token=jwt_token)
 
-    user_id = payload.get("sub", None)
+    token_type = payload.get("type")
 
-    if user_id:
-        user: Users | None = await AdminUsersRepo.admin_find_by_id(id_to_find=int(user_id), session=session)
+    if token_type != "access":
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token type is invalid")
+    
+    user_id = payload.get("sub")
+    jti = payload.get("jti")
 
-        if user is None:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="JWT Auth error, can not find user")
+    if jti is None or user_id is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is invalid")
+    
+    token_in_redis = await redis.get(f"blacklist:{jti}")
 
-        return user
+    if token_in_redis:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is in a blacklist (logged)")
 
-    else:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="JWT Auth error, Could not validate credentials")
+    user: Users | None = await AdminUsersRepo.admin_find_by_id(id_to_find=int(user_id), session=session)
+
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="JWT Auth error, can not find user")
+
+    return user
 
 
 async def get_current_admin_user(current_user: Users = Depends(get_current_user)) -> Users:

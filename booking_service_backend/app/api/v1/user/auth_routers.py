@@ -1,5 +1,4 @@
 from datetime import datetime, timezone
-from typing import Any
 
 import bcrypt
 import redis.asyncio as redis
@@ -74,18 +73,24 @@ async def logout(jwt_token: str = Depends(oauth2_scheme), redis_session: redis.R
 
     payload = decode_jwt(jwt_token=jwt_token)
 
+    jti = payload.get("jti", None)
+
+    if jti is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token, JTI not found")
+    
     exp = payload.get("exp", None)
 
     if exp is not None:
-        current_time = datetime.now(tz=timezone.utc)
-        time_left = int(exp - current_time)
+
+        current_time_seconds = int(datetime.now(tz=timezone.utc).timestamp())
+        time_left = exp - current_time_seconds
 
         if time_left > 0:
-            await redis_session.set(f"blacklist:{jwt_token}", "1", ex=time_left)
+            await redis_session.set(f"blacklist:{jti}", "1", ex=time_left)
 
         return JSONResponse(status_code=status.HTTP_200_OK, content={"message": "Successfull log out"})
 
-    raise HTTPException(status_code=status.h4)
+    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Error while logging out, expiration time was not found")
 
 
 @auth_router.post("/refresh", summary="Refresh token", response_model=RefreshTokenResponseSchema)

@@ -1,6 +1,6 @@
 from typing import Annotated, Self, Sequence
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, model_validator, ConfigDict
 
 RatingValid = Annotated[int, Field(ge=1, le=5)]
 
@@ -19,6 +19,7 @@ class HotelsResponseSchema(BaseModel):
     city: str
     rating: RatingValid
 
+    model_config = ConfigDict(from_attributes=True)
 
 class HotelsCreateSchema(BaseModel):
     name: str
