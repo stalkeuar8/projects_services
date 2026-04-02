@@ -7,21 +7,22 @@ Designed with clean architecture principles and optimized for concurrency and sc
 
 ## 🚀 Features
 
-* 🔐 JWT Authentication (Access + Refresh tokens)
+* 🔐 JWT Authentication (Access + Refresh tokens + blacklist)
 * 🏨 Room booking system with availability checks
 * 🤖 Telegram bot integration for booking approvals
 * 📊 Booking statistics & management
 * ⚡ Fully asynchronous (FastAPI + Async SQLAlchemy)
-* 🐳 Dockerized setup (one command запуск)
-* 🔄 Transaction-safe booking logic
+* 🐳 Dockerized setup (one-command startup)
+* 🔄 Transaction-safe booking logic (no race conditions)
 * 🧠 Clean architecture (API / Service / Repository)
+* 🧵 Background tasks with Celery
 
 ---
 
 ## ⚙️ Performance
 
-> Optimized FastAPI to handle **400+ concurrent users** and **120+ RPS**
-> by implementing:
+> Optimized FastAPI to handle **400+ concurrent users** and **120+ RPS** 
+> by implementing (limited by hardware):
 
 * Database indexing
 * Connection pool tuning
@@ -46,6 +47,11 @@ Designed with clean architecture principles and optimized for concurrency and sc
 
 ![Aiogram](https://img.shields.io/badge/Aiogram-Telegram-blue?style=for-the-badge)
 ![Aiohttp](https://img.shields.io/badge/Aiohttp-Async-green?style=for-the-badge)
+![Celery](https://img.shields.io/badge/Celery-Distributed%20Tasks-37814A?style=for-the-badge\&logo=celery)
+
+### Testing
+
+![Pytest](https://img.shields.io/badge/Pytest-Testing-0A9EDC?style=for-the-badge\&logo=pytest)
 
 ### DevOps
 
@@ -91,7 +97,7 @@ API Layer → Service Layer → Repository Layer → Database
 7. Telegram bot receives approval request
 8. User gets confirmation
 
-👉 This guarantees:
+👉 Guarantees:
 
 * No race conditions
 * Strong consistency
@@ -117,7 +123,38 @@ app/
  ├── models/
  ├── schemas/
  ├── core/
- └── bot/
+ ├── bot/
+ └── tasks/        # Celery workers
+```
+
+---
+
+## 🔧 Environment Variables
+
+Create a `.env` file in the root directory:
+
+```env
+DB_USER=postgres
+DB_PASS=postgres
+DB_NAME=booking_service_db
+DB_PORT=5432
+DB_HOST=postgres
+
+REDIS_HOST=redis
+REDIS_PORT=6379
+
+SECRET_KEY=YOUR_KEY
+
+BOT_TOKEN=YOUR_TOKEN
+BOT_PORT=8080
+BOT_HOST=0.0.0.0
+BOT_URL=YOUR_URL
+EXTERNAL_REQUEST_PATH=/external-data
+
+NGROK_AUTHTOKEN=YOUR_NGROK_TOKEN
+
+SERVICE_EMAIL=YOUR_SERVICE_EMAIL
+APP_PASSWORD=YOUR_EMAIL_APP_PASSWORD
 ```
 
 ---
@@ -133,18 +170,13 @@ cd your-project
 
 ---
 
-### 2. Create environment file
+### 2. Setup environment
 
 ```bash
 cp .env.example .env
 ```
 
-Fill in required variables:
-
-* DB credentials
-* JWT secret
-* Redis URL
-* Telegram bot token
+Fill in all required variables (see above).
 
 ---
 
@@ -163,7 +195,7 @@ docker-compose up --build
 
 ---
 
-## 🧪 Running Tests (optional)
+## 🧪 Running Tests
 
 ```bash
 pytest
@@ -173,9 +205,7 @@ pytest
 
 ## 📈 Future Improvements
 
-* Background jobs (Celery / Redis queue)
+* Advanced caching strategies
 * Rate limiting
-* Caching layer
-* Advanced monitoring (Prometheus)
-
----
+* Observability (metrics & tracing)
+* Horizontal scaling
