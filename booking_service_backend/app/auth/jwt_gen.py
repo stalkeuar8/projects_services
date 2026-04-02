@@ -1,18 +1,18 @@
 import uuid
-import redis.asyncio as redis
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import jwt
+import redis.asyncio as redis
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.settings.redis import get_redis
 from app.models.user import Users
 from app.repo.users_repo import AdminUsersRepo
 from app.settings.config import jwt_settings
 from app.settings.database import get_db
+from app.settings.redis import get_redis
 
 SECRET_KEY = jwt_settings.secret_key
 ALGORITHM = "HS256"
@@ -43,20 +43,20 @@ def decode_jwt(jwt_token: str) -> dict[str, Any]:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is invalid")
 
 
-async def get_current_user(jwt_token: str = Depends(oauth2_scheme), session: AsyncSession = Depends(get_db), redis = Depends(get_redis)) -> Users:
+async def get_current_user(jwt_token: str = Depends(oauth2_scheme), session: AsyncSession = Depends(get_db), redis=Depends(get_redis)) -> Users:
     payload = decode_jwt(jwt_token=jwt_token)
 
     token_type = payload.get("type")
 
     if token_type != "access":
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token type is invalid")
-    
+
     user_id = payload.get("sub")
     jti = payload.get("jti")
 
     if jti is None or user_id is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is invalid")
-    
+
     token_in_redis = await redis.get(f"blacklist:{jti}")
 
     if token_in_redis:

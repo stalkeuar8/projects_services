@@ -1,9 +1,10 @@
 import datetime
 
-from sqlalchemy import delete, update
+from sqlalchemy import update
 
 from app.models.booking import Bookings
 from app.settings.database import celery_session_factory
+from app.schemas.bookings_schemas import BookingStatus
 
 
 class BackgroundProcesses:
@@ -12,7 +13,7 @@ class BackgroundProcesses:
         try:
             async with celery_session_factory.begin() as session:
                 time_gap = datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(minutes=15)
-                query = delete(Bookings).where(Bookings.status == "pending", Bookings.created_at < time_gap)
+                query = update(Bookings).where(Bookings.status == BookingStatus.pending, Bookings.created_at < time_gap).values(status=BookingStatus.canceled)
 
                 await session.execute(query)
 

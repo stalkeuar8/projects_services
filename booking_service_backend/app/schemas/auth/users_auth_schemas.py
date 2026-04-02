@@ -35,6 +35,12 @@ class UserAuthResponseSchema(UserBaseSchema):
     jwt_token: str
 
 
+class UserLogoutResponseSchema(BaseModel):
+    status: int
+    is_logged_out: bool
+    message: str | None = None
+
+
 class RefreshTokenRequestSchema(BaseModel):
     refresh_token: str
 

@@ -28,3 +28,4 @@ pydantic[email]==2.12.5
 watchfiles==1.1.1
 ngrok==1.7.0
 aiosmtplib==5.1.0
+locust==2.43.4

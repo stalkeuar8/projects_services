@@ -1,6 +1,6 @@
-from typing import Any, Generic, Type, TypeVar
+from typing import Any, Generic, Type, TypeVar, cast
 
-from sqlalchemy import cast, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.base import Base

@@ -1,6 +1,6 @@
 from typing import Self
 
-from pydantic import BaseModel, EmailStr, Field, model_validator, ConfigDict
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
 
 from app.schemas.bookings_schemas import BookingsResponseSchema
 

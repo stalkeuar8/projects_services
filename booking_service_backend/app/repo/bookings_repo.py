@@ -62,27 +62,25 @@ class BookingsRepo:
         check_out: datetime.datetime,
         session: AsyncSession,
     ) -> bool:
-        
-        room_blocking_query = (
-            select(Rooms)
-            .where(Rooms.id==room_id)
-            .with_for_update()
-        )
+
+        room_blocking_query = select(Rooms).where(Rooms.id == room_id).with_for_update()
         await session.execute(room_blocking_query)
-        
+
         main_query = (
             select(Bookings)
-            .where(Bookings.status != BookingStatus.canceled, Bookings.check_in < check_out, Bookings.check_out > check_in, Bookings.room_id == room_id)
+            .where(
+                Bookings.status != BookingStatus.canceled, Bookings.check_in < check_out, Bookings.check_out > check_in, Bookings.room_id == room_id
+            )
             .limit(1)
         )
         result = await session.execute(main_query)
         booking = result.scalar_one_or_none()
-        
+
         if booking is not None:
             return False
 
         return True
-    
+
 
 class AdminBookingsRepo:
     @staticmethod

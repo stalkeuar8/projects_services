@@ -1,8 +1,8 @@
 from datetime import datetime, timezone
-from typing import Any, Generic, Sequence, Type, TypeVar
+from typing import Any, cast, Generic, Sequence, Type, TypeVar
 
 from pydantic import BaseModel
-from sqlalchemy import cast, select, update
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.base import Base

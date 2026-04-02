@@ -77,4 +77,3 @@ async def cancel_booking_by_id(
         return BookingsResponseSchema.model_validate(booking_obj=canceled_booking)
 
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Booking with id {booking_id} was not found")
-

@@ -14,6 +14,7 @@ from app.schemas.auth.users_auth_schemas import (
     RefreshTokenResponseSchema,
     UserAuthResponseSchema,
     UserLoginRequestSchema,
+    UserLogoutResponseSchema,
     UserRegisterRequestSchema,
 )
 from app.schemas.users_schemas import UsersCreateSchema
@@ -68,8 +69,8 @@ async def register(body: UserRegisterRequestSchema, session: AsyncSession = Depe
     raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Back-end server BAD GATEWAY")
 
 
-@auth_router.post("/logout", summary="Logout", response_model=JSONResponse)
-async def logout(jwt_token: str = Depends(oauth2_scheme), redis_session: redis.Redis = Depends(get_redis)) -> JSONResponse:
+@auth_router.post("/logout", summary="Logout", response_model=UserLogoutResponseSchema)
+async def logout(jwt_token: str = Depends(oauth2_scheme), redis_session: redis.Redis = Depends(get_redis)) -> UserLogoutResponseSchema:
 
     payload = decode_jwt(jwt_token=jwt_token)
 
@@ -77,18 +78,17 @@ async def logout(jwt_token: str = Depends(oauth2_scheme), redis_session: redis.R
 
     if jti is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token, JTI not found")
-    
+
     exp = payload.get("exp", None)
 
     if exp is not None:
-
         current_time_seconds = int(datetime.now(tz=timezone.utc).timestamp())
         time_left = exp - current_time_seconds
 
         if time_left > 0:
             await redis_session.set(f"blacklist:{jti}", "1", ex=time_left)
 
-        return JSONResponse(status_code=status.HTTP_200_OK, content={"message": "Successfull log out"})
+        return UserLogoutResponseSchema(status=200, message="Successfully logged out!", is_logged_out=True)
 
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Error while logging out, expiration time was not found")
 

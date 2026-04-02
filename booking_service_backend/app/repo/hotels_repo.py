@@ -9,7 +9,7 @@ from app.models.hotel import HotelAdmins, Hotels
 from app.repo.base_admin_repo import BaseAdminRepo
 from app.repo.base_repo import BaseRepo
 from app.schemas.auth.hotel_bot_schemas import HotelLoginSchema
-from app.schemas.hotels_schemas import HotelEditSchema, HotelsCreateSchema, HotelSearchFilters, HotelsCreateListSchema
+from app.schemas.hotels_schemas import HotelEditSchema, HotelsCreateListSchema, HotelsCreateSchema, HotelSearchFilters
 
 
 class HotelsRepo(BaseRepo[Hotels]):
@@ -78,21 +78,21 @@ class AdminHotelsRepo(BaseAdminRepo[Hotels]):
 
         if not info_to_edit:
             return None
-        
+
         query = update(Hotels).where(Hotels.id == hotel_id, Hotels.deleted_at.is_(None))
         filters = {}
 
         if info_to_edit.country:
-            filters['country'] = info_to_edit.country
+            filters["country"] = info_to_edit.country
 
         if info_to_edit.city:
-            filters['city'] = info_to_edit.city
+            filters["city"] = info_to_edit.city
 
         if info_to_edit.rating:
-            filters['rating'] = info_to_edit.rating
+            filters["rating"] = info_to_edit.rating
 
         if info_to_edit.name:
-            filters['name'] = info_to_edit.name
+            filters["name"] = info_to_edit.name
 
         query = query.values(**filters)
         result = await session.execute(query)

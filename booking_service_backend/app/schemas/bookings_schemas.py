@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import Self
 
-from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class BookingStatus(str, Enum):
@@ -51,7 +51,7 @@ class BookingsResponseSchema(BookingsBaseSchema):
 
     model_config = ConfigDict(from_attributes=True)
 
-    
+
 class AvailabilityForBookingResponseSchema(BookingsBaseSchema):
     is_available: bool
 
