@@ -164,8 +164,8 @@ APP_PASSWORD=YOUR_EMAIL_APP_PASSWORD
 ### 1. Clone repository
 
 ```bash
-git clone https://github.com/your-username/your-project.git
-cd your-project
+git clone https://github.com/stalkeuar8/projects_services.git
+cd booking_service_backend
 ```
 
 ---
