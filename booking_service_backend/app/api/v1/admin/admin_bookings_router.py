@@ -12,7 +12,7 @@ from app.settings.database import get_db
 
 booking_service = BookingService()
 
-admin_bookings_router = APIRouter(prefix="/admin/bookings", tags=["Admin"], dependencies=[Depends(get_current_admin_user)])
+admin_bookings_router = APIRouter(prefix="/v1/admin/bookings", tags=["Admin"], dependencies=[Depends(get_current_admin_user)])
 
 
 @admin_bookings_router.get("/{booking_id}", summary="Get booking by id (Admin)", response_model=BookingsResponseSchema)

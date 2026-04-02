@@ -57,7 +57,7 @@ async def process_password(message: types.Message, state: FSMContext) -> None:
                 await message.answer(text="Log out from another device, only one admin session is allowed ❌")
 
             else:
-                if bcrypt.checkpw(password.encode("utf-8"), hotel.bot_hashed_password):
+                if bcrypt.checkpw(password.encode("utf-8"), hotel.bot_hashed_password.encode("utf-8")):
                     await AdminBotHotelRepo.bot_login(session=session, login_info=login_dto)
                     await message.answer(text=f"Successfully logined by hotel {hotel_id} ✅")
 

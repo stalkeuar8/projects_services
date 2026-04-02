@@ -15,7 +15,7 @@ from app.schemas.hotels_schemas import (
 )
 from app.settings.database import get_db
 
-admin_hotels_router = APIRouter(prefix="/admin/hotels", tags=["Admin"], dependencies=[Depends(get_current_admin_user)])
+admin_hotels_router = APIRouter(prefix="/v1/admin/hotels", tags=["Admin"], dependencies=[Depends(get_current_admin_user)])
 
 
 @admin_hotels_router.get("/{hotel_id}", summary="Get hotel by id (Admin)", response_model=HotelsResponseSchema)
@@ -23,7 +23,7 @@ async def admin_get_hotel_by_id(hotel_id: int, session: AsyncSession = Depends(g
     hotel: Hotels | None = await AdminHotelsRepo.admin_find_by_id(id_to_find=hotel_id, session=session)
 
     if hotel:
-        return HotelsResponseSchema.model_validate(hotel_obj=hotel)
+        return HotelsResponseSchema.model_validate(hotel)
 
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Hotel with id {hotel_id} was not found")
 
@@ -33,7 +33,7 @@ async def admin_create_hotel(body: HotelsCreateSchema, session: AsyncSession = D
     new_hotel: Hotels | None = await AdminHotelsRepo.create(session=session, inserting_data_dto=body)
 
     if new_hotel:
-        return HotelsResponseSchema.model_validate(hotel_obj=new_hotel)
+        return HotelsResponseSchema.model_validate(new_hotel)
 
     raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Hotel not created, Back-end error.")
 
@@ -53,7 +53,7 @@ async def admin_delete_hotel_by_id(hotel_id: int, session: AsyncSession = Depend
     deleted_hotel: Hotels | None = await AdminHotelsRepo.admin_delete_by_id(session=session, id_to_delete=hotel_id)
 
     if deleted_hotel:
-        return HotelsResponseSchema.model_validate(hotel_obj=deleted_hotel)
+        return HotelsResponseSchema.model_validate(deleted_hotel)
 
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Hotel with id {hotel_id} was not found")
 

@@ -5,7 +5,7 @@ import bcrypt
 from pydantic import BaseModel, EmailStr, model_validator
 
 from app.schemas.users_schemas import UserBaseSchema
-
+from app.utils.hash_pass import get_password_hash
 
 class UsersRole(str, Enum):
     CLIENT = "client"
@@ -20,11 +20,11 @@ class UserLoginRequestSchema(BaseModel):
 
 class UserRegisterRequestSchema(UserBaseSchema):
     password: str
-    hashed_password: bytes | None = None
+    hashed_password: str | None = None
 
     @model_validator(mode="after")
     def hash_password(self) -> Self:
-        self.hashed_password = bcrypt.hashpw(self.password.encode("utf-8"), bcrypt.gensalt())
+        self.hashed_password = get_password_hash(self.password)
         return self
 
 

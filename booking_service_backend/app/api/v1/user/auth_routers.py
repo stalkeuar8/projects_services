@@ -21,7 +21,7 @@ from app.schemas.users_schemas import UsersCreateSchema
 from app.settings.database import get_db
 from app.settings.redis import get_redis
 
-auth_router = APIRouter(prefix="/auth", tags=["Authentication"])
+auth_router = APIRouter(prefix="/v1/auth", tags=["Authentication"])
 
 
 @auth_router.post("/login", summary="Login as user", response_model=UserAuthResponseSchema)
@@ -30,7 +30,8 @@ async def login(body: UserLoginRequestSchema, session: AsyncSession = Depends(ge
     user: Users | None = await AdminUsersRepo.admin_find_by_contact_info(session=session, email=body.email, phone_number=body.phone_number)
 
     if user:
-        if bcrypt.checkpw(body.password.encode("utf-8"), user.hashed_password):
+
+        if bcrypt.checkpw(body.password.encode("utf-8"), user.hashed_password.encode("utf-8")):
             jwt_token = create_access_token(user_id=user.id)
 
             return UserAuthResponseSchema(

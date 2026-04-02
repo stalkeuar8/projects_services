@@ -6,7 +6,7 @@ from app.models.user import Users
 from app.schemas.users_schemas import UsersResponseSchema
 from app.settings.database import get_db
 
-users_router = APIRouter(prefix="/users", tags=["Users"])
+users_router = APIRouter(prefix="/v1/users", tags=["Users"])
 
 
 @users_router.get("/me", summary="Get users profile (only logined users)", response_model=UsersResponseSchema)

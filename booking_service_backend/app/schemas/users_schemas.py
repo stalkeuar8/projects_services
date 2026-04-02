@@ -1,4 +1,4 @@
-from typing import Self
+from typing import Self, Sequence
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
 
@@ -12,17 +12,20 @@ class UserBaseSchema(BaseModel):
 
 
 class UsersCreateSchema(UserBaseSchema):
-    hashed_password: bytes
+    hashed_password: str
 
+    model_config = ConfigDict(from_attributes=True, extra='ignore')
 
 class UsersResponseSchema(UserBaseSchema):
     id: int
 
     model_config = ConfigDict(from_attributes=True)
 
+class UserListCreateSchema(BaseModel):
+    user_list: Sequence[UsersCreateSchema]
 
 class UsersListResponseSchema(BaseModel):
-    users: list[UsersResponseSchema]
+    users: Sequence[UsersResponseSchema]
     total: int | None = None
 
     @model_validator(mode="after")

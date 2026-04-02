@@ -8,7 +8,7 @@ from app.repo.hotels_repo import HotelsRepo
 from app.schemas.hotels_schemas import HotelSearchFilters, HotelsListResponseSchema, HotelsResponseSchema
 from app.settings.database import get_db
 
-hotels_router = APIRouter(prefix="/hotels", tags=["Hotels"])
+hotels_router = APIRouter(prefix="/v1/hotels", tags=["Hotels"])
 
 
 @hotels_router.get("/", summary="Get hotels by filters", response_model=HotelsListResponseSchema)
@@ -26,6 +26,6 @@ async def get_hotel_by_id(hotel_id: int, session: AsyncSession = Depends(get_db)
     hotel: Hotels | None = await HotelsRepo.find_by_id(id_to_find=hotel_id, session=session)
 
     if hotel:
-        return HotelsResponseSchema.model_validate(hotel_obj=hotel)
+        return HotelsResponseSchema.model_validate(hotel)
 
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Hotel with id {hotel_id} was not found")

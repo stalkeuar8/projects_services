@@ -19,6 +19,9 @@
 #         else:
 #             raise StopIteration("You are on the last page, there is no next pages")
 
+
+
+
 #     def previous(self) -> list[Rooms]:
 #         if self.current_group == 0:
 #             raise StopIteration("You are on the first page, there is no previous page.")

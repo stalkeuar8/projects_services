@@ -1,3 +1,6 @@
 /b_s_env
 start_script.sh
 /data_gen
+/app/utils/paginator
+/app/utils/transaction_deco
+/app/utils/bg_tasks_observer

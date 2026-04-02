@@ -16,7 +16,7 @@ from app.settings.redis import get_redis
 
 SECRET_KEY = jwt_settings.secret_key
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 15
+ACCESS_TOKEN_EXPIRE_MINUTES = 60
 oauth2_scheme = OAuth2PasswordBearer("/auth/login")
 
 

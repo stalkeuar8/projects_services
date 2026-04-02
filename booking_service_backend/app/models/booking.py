@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from app.models.hotel import Rooms
     from app.models.user import Users
 
-from sqlalchemy import ForeignKey, text
+from sqlalchemy import ForeignKey, text, Index
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, datetime_utc_timezone, id_primary_key, non_empty_str, not_null_int
@@ -26,3 +26,8 @@ class Bookings(Base):
 
     user: Mapped["Users"] = relationship(back_populates="bookings")
     room: Mapped["Rooms"] = relationship()
+
+
+    __table_args__ = (
+        Index('availability_check_index', "room_id", "check_in", "check_out"),
+    )

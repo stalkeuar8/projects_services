@@ -12,7 +12,7 @@ from app.schemas.bookings_schemas import AvailabilityForBookingResponseSchema
 from app.schemas.rooms_schemas import RoomSearchFilters, RoomsListResponseSchema, RoomsResponseSchema
 from app.settings.database import get_db
 
-rooms_router = APIRouter(prefix="/rooms", tags=["Rooms"])
+rooms_router = APIRouter(prefix="/v1/rooms", tags=["Rooms"])
 
 
 @rooms_router.get("/", summary="Get rooms by filters", response_model=RoomsListResponseSchema)
@@ -34,7 +34,7 @@ async def get_room_by_id(room_id: int, session: AsyncSession = Depends(get_db)) 
     room: Rooms | None = await RoomsRepo.find_by_id(id_to_find=room_id, session=session)
 
     if room:
-        return RoomsResponseSchema.model_validate(room_obj=room)
+        return RoomsResponseSchema.model_validate(room)
 
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Room with id {room_id} was not found")
 

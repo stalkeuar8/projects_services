@@ -9,7 +9,7 @@ from app.repo.rooms_repo import AdminRoomsRepo
 from app.schemas.rooms_schemas import RoomEditSchema, RoomsCreateSchema, RoomsResponseSchema
 from app.settings.database import get_db
 
-admin_rooms_router = APIRouter(prefix="/admin/rooms", tags=["Admin"], dependencies=[Depends(get_current_admin_user)])
+admin_rooms_router = APIRouter(prefix="/v1/admin/rooms", tags=["Admin"], dependencies=[Depends(get_current_admin_user)])
 
 
 @admin_rooms_router.get("/{hotel_id}", summary="Get room by id (Admin)", response_model=RoomsResponseSchema)
@@ -27,7 +27,7 @@ async def admin_create_room(body: RoomsCreateSchema, session: AsyncSession = Dep
     new_room: Rooms | None = await AdminRoomsRepo.create(session=session, inserting_data_dto=body)
 
     if new_room:
-        return RoomsResponseSchema.model_validate(room_obj=new_room)
+        return RoomsResponseSchema.model_validate(new_room)
 
     raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Client not created, Back-end error.")
 
@@ -47,7 +47,7 @@ async def admin_delete_room_by_id(room_id: int, session: AsyncSession = Depends(
     deleted_room: Rooms | None = await AdminRoomsRepo.admin_delete_by_id(session=session, id_to_delete=room_id)
 
     if deleted_room:
-        return RoomsResponseSchema.model_validate(room_obj=deleted_room)
+        return RoomsResponseSchema.model_validate(deleted_room)
 
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Room with id {room_id} was not found")
 

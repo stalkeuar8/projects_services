@@ -15,7 +15,7 @@ from app.settings.database import get_db
 
 booking_service = BookingService()
 
-bookings_router = APIRouter(prefix="/bookings", tags=["Bookings"])
+bookings_router = APIRouter(prefix="/v1/bookings", tags=["Bookings"])
 
 
 @bookings_router.post("/", summary="Create booking (Only logined users)", response_model=BookingsResponseSchema)
@@ -74,6 +74,6 @@ async def cancel_booking_by_id(
     )
 
     if canceled_booking:
-        return BookingsResponseSchema.model_validate(booking_obj=canceled_booking)
+        return BookingsResponseSchema.model_validate(canceled_booking)
 
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Booking with id {booking_id} was not found")

@@ -10,6 +10,7 @@ from app.repo.base_admin_repo import BaseAdminRepo
 from app.repo.base_repo import BaseRepo
 from app.schemas.auth.hotel_bot_schemas import HotelLoginSchema
 from app.schemas.hotels_schemas import HotelEditSchema, HotelsCreateListSchema, HotelsCreateSchema, HotelSearchFilters
+from app.utils.hash_pass import get_password_hash
 
 
 class HotelsRepo(BaseRepo[Hotels]):
@@ -49,7 +50,7 @@ class AdminHotelsRepo(BaseAdminRepo[Hotels]):
         session.add(new_obj)
         await session.flush()
 
-        hashed_password = bcrypt.hashpw(f"password_hotel{new_obj.id}".encode("utf-8"), bcrypt.gensalt())
+        hashed_password = get_password_hash(f"password_hotel{new_obj.id}")
 
         new_hotel_admin_obj = HotelAdmins(hotel_id=new_obj.id, bot_hashed_password=hashed_password)
         session.add(new_hotel_admin_obj)
@@ -66,7 +67,7 @@ class AdminHotelsRepo(BaseAdminRepo[Hotels]):
         await session.flush()
 
         new_hotel_admin_objs = [
-            HotelAdmins(hotel_id=obj.id, bot_hashed_password=bcrypt.hashpw(f"password_hotel{obj.id}".encode("utf-8"), bcrypt.gensalt()))
+            HotelAdmins(hotel_id=obj.id, bot_hashed_password=get_password_hash(f"password_hotel{obj.id}"))
             for obj in new_hotel_objs
         ]
         session.add_all(new_hotel_admin_objs)

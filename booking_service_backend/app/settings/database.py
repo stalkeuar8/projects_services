@@ -4,8 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 from app.settings.config import database_settings
 
-async_engine: AsyncEngine = create_async_engine(url=database_settings.DATABASE_async_url, echo=False, pool_size=5, max_overflow=10)
-
+async_engine: AsyncEngine = create_async_engine(url=database_settings.DATABASE_async_url, echo=False, pool_size=30, max_overflow=69)
 async_session_factory = async_sessionmaker(async_engine, expire_on_commit=False)
 
 celery_engine: AsyncEngine = create_async_engine(url=database_settings.DATABASE_async_url, echo=False, pool_size=1)
