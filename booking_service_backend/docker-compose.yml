@@ -22,6 +22,7 @@ services:
 
   redis:
     image: redis:alpine
+    restart: no
     ports:
       - "6379:6379"
     networks:
@@ -36,6 +37,7 @@ services:
       - PYTHONPATH=/app
     networks:
       - booking_network
+    restart: no
     volumes:
       - .:/app
     depends_on:
@@ -45,6 +47,7 @@ services:
         condition: service_healthy
 
   celery_beat:
+    restart: no
     build: .
     command: celery -A app.background_tasks.celery_worker.celery_app beat --loglevel=info
     env_file:
@@ -60,6 +63,7 @@ services:
         condition: service_started
 
   migrations:
+    restart: no
     build: .
     command: alembic upgrade head
     volumes:
@@ -77,11 +81,11 @@ services:
       - DB_NAME=${DB_NAME}
 
   app:
+    restart: no
     build: 
       context: .
       dockerfile: Dockerfile
     container_name: fastapi_app
-    restart: always
     env_file:
       - .env
     ports:
@@ -97,9 +101,9 @@ services:
       - .:/app
 
   bot:
+    restart: no
     build: .
     command: watchfiles --ignore-paths "__pycache__" "python app/bot/bot_main.py" ./app
-    restart: always
     expose:
       - "${BOT_PORT}"
     depends_on:
@@ -119,7 +123,7 @@ services:
 
   ngrok:
     image: ngrok/ngrok:latest
-    restart: always
+    restart: no
     environment:
       - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
     command:
