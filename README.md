@@ -1,28 +1,31 @@
 <div align="left">
+  
+# [📔 Booking Service (Async FastAPI Backend)](booking_service_backend)
 
-# [📔 Hotel Booking Service (Core Backend)](booking_service_backend)
-
-A scalable, fully asynchronous backend built on Clean Architecture and SQLAlchemy 2.0, featuring resilient transaction management and autonomous background workers for reliable data processing.
+A high-performance, fully asynchronous booking service built with FastAPI and PostgreSQL, featuring clean architecture, robust transaction management, and reliable concurrency handling.
 
 ---
 
 ### 🚀 Key Architectural Features
 
-Built on Clean Architecture principles, this fully asynchronous backend (SQLAlchemy 2.0) features custom, resilient transaction management. By leveraging isolated background task managers and autonomous workers, the system ensures high fault tolerance, scalability, and automated data consistency.
+Built on Clean Architecture principles, this asynchronous backend (FastAPI + SQLAlchemy 2.0) implements safe transactional workflows and pessimistic locking to ensure data consistency. Integration with background workers and external services (Telegram bot, email) provides reliable and scalable request processing.
 
 ### 🛠️ Tech Stack
 
-![Python](https://img.shields.io/badge/Python_3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)
+![Python](https://img.shields.io/badge/Python_3.12+-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
 ![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy_2.0-D71F00?style=for-the-badge)
-![Pydantic](https://img.shields.io/badge/Pydantic_V2-E92063?style=for-the-badge&logo=pydantic&logoColor=white)
-![Asyncio](https://img.shields.io/badge/asyncio-000000?style=for-the-badge&logo=python&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white)
+![Celery](https://img.shields.io/badge/Celery-37814A?style=for-the-badge&logo=celery&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2CA5E0?style=for-the-badge&logo=docker&logoColor=white)
 
-Stack: Python, PostgreSQL, SQLAlchemy 2.0, Pydantic V2, Asyncio, Docker
+Stack: FastAPI, Python, PostgreSQL, SQLAlchemy 2.0, Redis, Celery, Docker
 
 ### 🔮 Future Plans
-* Integrate FastAPI, JWT-based user authentication, Redis/Taskiq brokers
+* Advanced caching strategies and rate limiting  
+* Observability (metrics, logging, tracing)  
+* Horizontal scaling and performance tuning
 
 
 
